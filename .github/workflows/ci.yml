@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+# Package constraint: sdk ^3.8.0 (see pubspec.yaml).
+# Unit job pins Dart 3.8.0 (minimum). E2E uses Flutter stable whose Dart
+# must be >= 3.8.0. No dependency caching — avoids stale pub results.
+# flutter_e2e is excluded from unit and run only in the dedicated job.
+
+jobs:
+  unit:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: 3.8.0
+      - run: dart --version
+      - run: dart pub get
+      - run: dart format --set-exit-if-changed .
+      - run: dart analyze
+      - run: dart test --exclude-tags flutter_e2e
+
+  flutter_e2e:
+    runs-on: ubuntu-latest
+    needs: unit
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          # Pin when CI flakiness appears; must ship Dart >= 3.8.0.
+          cache: false
+      - run: flutter --version
+      - run: dart --version
+      - run: dart pub get
+      - run: dart test -t flutter_e2e
+        timeout-minutes: 25

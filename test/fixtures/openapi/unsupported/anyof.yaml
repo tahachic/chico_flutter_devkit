@@ -1,0 +1,21 @@
+openapi: 3.0.3
+info:
+  title: AnyOf API
+  version: 1.0.0
+paths:
+  /value:
+    get:
+      operationId: getValue
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Value'
+components:
+  schemas:
+    Value:
+      anyOf:
+        - type: string
+        - type: integer

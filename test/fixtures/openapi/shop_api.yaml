@@ -1,0 +1,177 @@
+openapi: 3.0.3
+info:
+  title: Shop API
+  version: 1.2.0
+servers:
+  - url: https://api.shop.example.com/v1
+paths:
+  /products:
+    get:
+      operationId: listProducts
+      summary: List products
+      tags: [products]
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: q
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+    post:
+      operationId: createProduct
+      summary: Create product
+      tags: [products]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductInput'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+  /products/{productId}:
+    get:
+      operationId: getProduct
+      summary: Get a product
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+    put:
+      operationId: replaceProduct
+      summary: Replace a product
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductInput'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+    patch:
+      operationId: patchProduct
+      summary: Patch a product
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductInput'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+    delete:
+      operationId: deleteProduct
+      summary: Delete a product
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: No Content
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+  schemas:
+    ProductStatus:
+      type: string
+      enum: [draft, published, archived]
+    Money:
+      type: object
+      required: [amount, currency]
+      properties:
+        amount:
+          type: number
+          format: double
+        currency:
+          type: string
+    Product:
+      type: object
+      required: [id, name, status]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        price:
+          type: number
+          format: double
+        status:
+          $ref: '#/components/schemas/ProductStatus'
+        money:
+          $ref: '#/components/schemas/Money'
+        tags:
+          type: array
+          items:
+            type: string
+    ProductInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        price:
+          type: number
+          format: double
+        status:
+          $ref: '#/components/schemas/ProductStatus'
+security:
+  - bearerAuth: []

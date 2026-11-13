@@ -1,0 +1,30 @@
+# Dart / Pub
+.dart_tool/
+.packages
+.pub/
+build/
+pubspec.lock
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Coverage / reports
+coverage/
+*.lcov
+
+# Local overrides
+*.local.yaml
+
+# Generated / temp
+.tmp/
+temp/
+tmp/

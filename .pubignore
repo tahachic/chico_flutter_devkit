@@ -1,0 +1,5 @@
+# Internal maintenance / release-gate reports (kept in Git, not on pub.dev)
+AUDIT_REPORT.md
+RELEASE_READINESS_REPORT.md
+FINAL_RELEASE_VERIFICATION.md
+PRE_COMMIT_REVIEW.md

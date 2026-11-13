@@ -1,0 +1,21 @@
+openapi: 3.0.3
+info:
+  title: Public API
+  version: 1.0.0
+servers:
+  - url: https://public.example.com
+paths:
+  /health:
+    get:
+      operationId: health
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok]
+                properties:
+                  ok:
+                    type: boolean

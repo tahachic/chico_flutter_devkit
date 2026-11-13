@@ -1,0 +1,34 @@
+name: chico_flutter_devkit
+description: >
+  Professional Flutter development toolkit — project creation, code generation,
+  diagnostics, and Chico ecosystem integration. Installable as `devkit`.
+version: 1.0.0-dev.8
+homepage: https://github.com/tahachic/chico_flutter_devkit
+repository: https://github.com/tahachic/chico_flutter_devkit
+issue_tracker: https://github.com/tahachic/chico_flutter_devkit/issues
+
+environment:
+  sdk: ^3.8.0
+
+executables:
+  devkit: devkit
+
+dependencies:
+  args: ^2.7.0
+  mason_logger: ^0.3.3
+  meta: ^1.16.0
+  path: ^1.9.1
+  pub_semver: ^2.2.1
+  yaml: ^3.1.3
+  yaml_edit: ^2.2.4
+
+dev_dependencies:
+  lints: ^6.0.0
+  test: ^1.25.15
+
+topics:
+  - flutter
+  - cli
+  - codegen
+  - developer-tools
+  - chico

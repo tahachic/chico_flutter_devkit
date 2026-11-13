@@ -1,0 +1,16 @@
+id: _fixture
+version: 1.0.0
+description: Internal fixture template used by automated tests.
+required_variables:
+  - className
+  - snakeCaseName
+architectures:
+  - clean
+state_management:
+  - bloc
+files:
+  - template: example.dart.tmpl
+    output: "lib/generated/{{snakeCaseName}}.dart"
+  - template: example_test.dart.tmpl
+    output: "test/generated/{{snakeCaseName}}_test.dart"
+    when: generateTests

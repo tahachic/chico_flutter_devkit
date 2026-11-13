@@ -1,0 +1,32 @@
+openapi: 3.0.3
+info:
+  title: Mixed Schema API
+  version: 1.0.0
+paths:
+  /items:
+    get:
+      operationId: listItems
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Item'
+components:
+  schemas:
+    Item:
+      type: object
+      required: [id]
+      properties:
+        id:
+          type: string
+        payload:
+          oneOf:
+            - type: string
+            - type: object
+              properties:
+                nested:
+                  type: boolean

@@ -1,0 +1,27 @@
+openapi: 3.0.3
+info:
+  title: OneOf API
+  version: 1.0.0
+paths:
+  /shape:
+    get:
+      operationId: getShape
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Shape'
+components:
+  schemas:
+    Shape:
+      oneOf:
+        - type: object
+          properties:
+            kind:
+              type: string
+        - type: object
+          properties:
+            radius:
+              type: number
