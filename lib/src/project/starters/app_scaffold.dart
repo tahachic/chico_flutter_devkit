@@ -120,10 +120,15 @@ $prelude
         options.enableChicoUi ||
         options.enableChicoKit ||
         options.enableChicoServices;
-    final imports = StringBuffer()
-      ..writeln("import 'package:flutter/material.dart';");
+    // Chico roots use ChicoApp + Color from flutter/widgets — do not import
+    // package:flutter/material.dart (deprecated after Flutter 3.47; fails
+    // `flutter analyze --fatal-infos` on current stable).
+    final imports = StringBuffer();
     if (useChico) {
+      imports.writeln("import 'package:flutter/widgets.dart';");
       imports.writeln(ChicoBootSnippets.importLine(options.chicoConfig));
+    } else {
+      imports.writeln("import 'package:flutter/material.dart';");
     }
     if (options.routing == Routing.goRouter) {
       imports.writeln("import 'core/routing/app_router.dart';");

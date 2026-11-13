@@ -55,6 +55,16 @@ void main() {
     expect(flutterCli.pubGetCalls, contains(projectPath));
     expect(File(p.join(projectPath, 'lib', 'main.dart')).existsSync(), isTrue);
     expect(File(p.join(projectPath, 'lib', 'app.dart')).existsSync(), isTrue);
+    final appSource = File(
+      p.join(projectPath, 'lib', 'app.dart'),
+    ).readAsStringSync();
+    expect(
+      appSource,
+      isNot(contains("package:flutter/material.dart")),
+      reason: 'Chico apps must not import deprecated flutter/material.dart',
+    );
+    expect(appSource, contains("package:flutter/widgets.dart"));
+    expect(appSource, contains('ChicoApp'));
     expect(
       File(p.join(projectPath, '.chico', 'devkit.yaml')).existsSync(),
       isTrue,

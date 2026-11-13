@@ -36,7 +36,8 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
-          # Pin when CI flakiness appears; must ship Dart >= 3.8.0.
+          # Current stable deprecates package:flutter/material.dart (info).
+          # Chico scaffolds avoid that import; E2E uses --fatal-infos.
           cache: false
       - run: flutter --version
       - run: dart --version
