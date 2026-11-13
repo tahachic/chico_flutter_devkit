@@ -36,6 +36,22 @@ void main() {
     expect(resolved.config.schemaVersion, currentSchemaVersion);
   });
 
+  test('resolve lowercases uppercase temp directory names', () {
+    // Simulates Linux/macOS Directory.createTemp suffixes.
+    final resolved = service.resolve(
+      projectRoot: p.join(tempRoot.path, 'devkit_gen_XDPSQA'),
+    );
+    expect(resolved.config.project.name, 'devkit_gen_xdpsqa');
+  });
+
+  test('packageNameFromDirectory sanitizes invalid basenames', () {
+    expect(
+      ConfigService.packageNameFromDirectory('/tmp/devkit_gen_XDPSQA'),
+      'devkit_gen_xdpsqa',
+    );
+    expect(ConfigService.packageNameFromDirectory('/tmp/123bad'), 'app_123bad');
+  });
+
   test('initProjectConfig writes .chico/devkit.yaml', () async {
     final path = await service.initProjectConfig(
       projectRoot: tempRoot.path,

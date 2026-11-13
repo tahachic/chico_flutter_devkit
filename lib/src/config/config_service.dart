@@ -65,9 +65,7 @@ final class ConfigService {
     final userPath = ConfigPaths.userConfigFile(homeOverride: _homeOverride);
 
     var config = DevKitConfigDefaults.create(
-      projectName:
-          projectNameHint ??
-          p.basename(normalizedRoot).replaceAll(RegExp(r'[^a-zA-Z0-9_]'), '_'),
+      projectName: projectNameHint ?? packageNameFromDirectory(normalizedRoot),
     );
 
     final userExists = File(userPath).existsSync();
@@ -117,10 +115,7 @@ final class ConfigService {
     final effective =
         config ??
         DevKitConfigDefaults.create(
-          projectName: p
-              .basename(p.normalize(projectRoot))
-              .replaceAll(RegExp(r'[^a-zA-Z0-9_]'), '_')
-              .toLowerCase(),
+          projectName: packageNameFromDirectory(projectRoot),
         );
     _validator.validate(effective);
 
@@ -286,5 +281,22 @@ final class ConfigService {
       return inner.split(',').map((item) => item.trim()).toList();
     }
     return trimmed;
+  }
+
+  /// Derives a valid Dart package name from a directory path.
+  ///
+  /// Linux/macOS `Directory.createTemp` often yields uppercase suffixes
+  /// (e.g. `devkit_gen_XDPSQA`). Those must be lowercased before validation.
+  static String packageNameFromDirectory(String projectRoot) {
+    var name = p
+        .basename(p.normalize(projectRoot))
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^a-z0-9_]'), '_');
+    name = name.replaceAll(RegExp(r'_+'), '_');
+    name = name.replaceAll(RegExp(r'^_+|_+$'), '');
+    if (name.isEmpty || !RegExp(r'^[a-z]').hasMatch(name)) {
+      name = 'app${name.isEmpty ? '' : '_$name'}';
+    }
+    return name;
   }
 }
