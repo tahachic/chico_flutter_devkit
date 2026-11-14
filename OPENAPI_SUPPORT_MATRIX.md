@@ -1,6 +1,6 @@
 # OpenAPI Support Matrix
 
-**Package version:** `1.0.0-dev.8`  
+**Package version:** `1.0.0-dev.9`  
 **Validator:** `lib/src/openapi/support_validator.dart`  
 **Parser:** `lib/src/openapi/parser.dart`
 

@@ -1,0 +1,10 @@
+name: chico_flutter_devkit_example
+description: Minimal library example for chico_flutter_devkit.
+publish_to: none
+
+environment:
+  sdk: ^3.8.0
+
+dependencies:
+  chico_flutter_devkit:
+    path: ../

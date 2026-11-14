@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.0.0-dev.9
+
+### Added
+
+- `example/` directory with a runnable public-API snippet for pub.dev documentation scoring
+
+### Notes
+
+- Ensure the GitHub repository is public so homepage/repository/issue tracker URLs resolve on pub.dev
+
 ## 1.0.0-dev.8
 
 ### Fixed

@@ -5,7 +5,7 @@ diagnostics, and Chico ecosystem integration.
 
 **CLI command:** `devkit`
 
-**Status:** Stabilization (`1.0.0-dev.8`) — see [Getting started](doc/GETTING_STARTED.md) and the [release checklist](doc/RELEASE.md).
+**Status:** Stabilization (`1.0.0-dev.9`) — see [Getting started](doc/GETTING_STARTED.md) and the [release checklist](doc/RELEASE.md).
 
 ## What works today
 
