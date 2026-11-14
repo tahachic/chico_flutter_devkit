@@ -7,7 +7,7 @@ const int currentSchemaVersion = 1;
 abstract final class DefaultChicoVersions {
   static const String ui = '^1.7.0';
   static const String kit = '^1.4.0';
-  static const String services = '^1.3.0';
+  static const String services = '^1.4.0';
 }
 
 /// Factory for validated default configuration.

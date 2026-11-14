@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.0.0-dev.11
+
+### Changed
+
+- Default `chico_services` constraint to `^1.4.0` (Built-in Kotlin / AGP 9
+  plugin floors; requires Flutter ≥ 3.44)
+
 ## 1.0.0-dev.10
 
 ### Added

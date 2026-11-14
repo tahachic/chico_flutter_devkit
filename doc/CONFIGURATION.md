@@ -53,7 +53,7 @@ chico:
     version: "^1.4.0"
   services:
     enabled: true
-    version: "^1.3.0"
+    version: "^1.4.0"
 
 features:
   default_architecture: clean
@@ -104,4 +104,4 @@ devkit config set flutter.localization.languages [en,fr,ar]
 |---------|--------------------|
 | `chico_ui` | `^1.7.0` |
 | `chico_kit` | `^1.4.0` |
-| `chico_services` | `^1.3.0` |
+| `chico_services` | `^1.4.0` |

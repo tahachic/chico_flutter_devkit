@@ -55,7 +55,7 @@ test/
 |---------|---------|-------------|
 | `chico_ui` | `^1.7.0` | `ChicoApp` / `ChicoApp.router` |
 | `chico_kit` | `^1.4.0` | import only (re-exports UI) |
-| `chico_services` | `^1.3.0` | `await ChicoServices.init(baseUrl: …)` |
+| `chico_services` | `^1.4.0` | `await ChicoServices.init(baseUrl: …)` |
 
 Requires Dart `^3.8` and Flutter `>=3.32`.
 

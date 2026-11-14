@@ -21,7 +21,7 @@ Future<void> writeFlutterPubspec(
     deps.writeln('  chico_kit: ^1.4.0');
   }
   if (chicoServices) {
-    deps.writeln('  chico_services: ^1.3.0');
+    deps.writeln('  chico_services: ^1.4.0');
   }
 
   await File(p.join(projectRoot, 'pubspec.yaml')).writeAsString('''
