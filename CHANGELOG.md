@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.0.0-dev.10
+
+### Added
+
+- Full user documentation hub on pub.dev: expanded README, Getting Started,
+  Create App, Command Reference, Cookbook, Troubleshooting, and richer
+  Generator Guide / example README
+
 ## 1.0.0-dev.9
 
 ### Added

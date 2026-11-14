@@ -1,61 +1,38 @@
-# Generator Guide
+# Generator guide
 
-## Commands
+```bash
+devkit generate <type> <name> [flags]
+devkit list generators
+```
+
+Always available shared flags: `--dry-run`, `--force` / `-f`, `--tests` /
+`--no-tests`, `--architecture`, `--state`, `--feature`, `--add-missing-chico`.
+
+---
+
+## `feature`
+
+Scaffold a feature for the project architecture (domain/data/presentation).
 
 ```bash
 devkit generate feature products
-devkit generate model Product --fields id:String,name:String,price:double?
-devkit generate model Product --from-json product.json
-devkit generate widget ProductCard
-devkit generate widget ProductCard --feature products
-devkit generate screen ProductDetails
-devkit generate screen ProductDetails --feature products
-devkit generate bloc Products
-devkit generate cubit Products --feature products
-devkit generate provider Products --state riverpod
-devkit generate feature products
-devkit generate repository products --feature products --crud
-devkit generate service NotificationService
-devkit generate enum OrderStatus --values pending,shipped,delivered
-devkit generate extension StringX --on String
-devkit generate test Product --kind unit --target model
-devkit generate api shop --spec openapi.yaml
-devkit generate api shop --spec openapi.json --base-url https://api.example.com --force
+devkit generate feature products --crud --pagination --search --filters --local
+devkit generate feature catalog --architecture layered --state riverpod --no-tests
 ```
 
-## Shared flags
-
-| Flag | Meaning |
-|------|---------|
-| `--dry-run` | Preview files only |
-| `--force` / `-f` | Overwrite existing files (backups when configured) |
-| `--architecture` | `clean` \| `feature_first` \| `layered` |
-| `--state` | `bloc` \| `cubit` \| `riverpod` \| `provider` |
-| `--tests` / `--no-tests` | Toggle test generation |
-
-## Feature flags
-
-| Flag | Meaning |
-|------|---------|
-| `--crud` | create/update/delete on repository + remote datasource |
-| `--pagination` | `fetchPage` APIs + UI hook comment |
-| `--search` | `search` APIs + UI hook comment |
-| `--filters` | UI hook comment |
-| `--local` | local datasource + cache |
+| Flag | Effect |
+|------|--------|
+| `--crud` | create/update/delete on repository + remote |
+| `--pagination` | page APIs + UI hook comments |
+| `--search` / `--filters` | search/filter hooks |
+| `--local` | local datasource |
 | `--remote` / `--no-remote` | remote datasource (default on) |
-| `--fields` | entity/model fields (`id:String,name:String`) |
-| `--values` | Enum values (`pending,shipped`) |
-| `--on` | Extension target type (`String`) |
-| `--kind` | Test kind (`unit` \| `widget`) |
-| `--target` | Test target folder/type (`model`, `service`, …) |
-| `--spec` | OpenAPI 3.x YAML/JSON path (`api` generator) |
-| `--base-url` | Override OpenAPI server URL (`api` generator) |
-| `--output` | API client output directory (default `lib/api/<name>`) |
-| `--add-missing-chico` | Explicitly add missing Chico deps required by UI gens |
+| `--fields` | entity/model fields |
 
-## Feature layouts
+**Honest scaffold:** datasources / some state methods may throw
+`UnimplementedError`. The CLI summary reports pending implementation counts.
 
-### Clean / feature-first
+### Layout (clean / feature-first)
 
 ```text
 lib/features/<name>/
@@ -70,46 +47,150 @@ lib/features/<name>/
   presentation/widgets/
 ```
 
-### Layered
+---
 
-```text
-lib/data/...
-lib/domain/...
-lib/presentation/features/<name>/...
+## `model`
+
+```bash
+devkit generate model Product --fields id:String,name:String,price:double?
+devkit generate model Product --from-json product.json
 ```
 
-## Model notes
+Always emits `fromJson`, `toJson`, `copyWith`, `==` / `hashCode`.
 
-- Always generates `fromJson`, `toJson`, `copyWith`, and `==`/`hashCode`
-- `--from-json` infers types from a JSON object (or first array element)
-- Nested objects become `Map<String, dynamic>` in this phase
+Default path: `lib/models/<snake>.dart`
 
-## Repository notes
+---
 
-- Requires an existing feature entity + model + at least one datasource
-- Prefer `devkit generate feature <name>` first
-- Standalone generation without prerequisites fails with exit code 64
+## `widget`
 
-## Feature notes
+```bash
+devkit generate widget ProductCard
+devkit generate widget ProductCard --feature products
+```
 
-- Output is a **scaffold**, not a finished CRUD app
-- Datasource/state methods may contain `UnimplementedError` / TODO wiring points
-- CLI summary reports pending implementation counts
+Uses Chico widgets when Chico is enabled in config; otherwise Material.
 
-## API notes
+---
 
-- Requires `--spec` pointing at OpenAPI 3.x YAML or JSON
-- Writes under `lib/api/<name>/generated/` for safe regeneration
-- Details: [OPENAPI.md](OPENAPI.md)
+## `screen`
 
-## UI packages
+```bash
+devkit generate screen ProductDetails
+devkit generate screen ProductDetails --feature products --no-tests
+```
 
-When `chico.ui` / `chico.kit` are enabled in `.chico/devkit.yaml`, widgets and
-screens use verified Chico APIs (`ChicoScaffold`, `ChicoListTile`, …).
-Otherwise Material widgets are generated.
+Default path: `lib/presentation/pages/<name>_page.dart`  
+With `--feature`: under that feature’s `presentation/pages/`.
 
-## Adding a generator
+---
+
+## `bloc` / `cubit` / `provider`
+
+```bash
+devkit generate bloc Products
+devkit generate cubit Cart --feature products
+devkit generate provider Session --state riverpod
+```
+
+These are state scaffolds — wire them into pages yourself (TODOs are included).
+
+---
+
+## `repository`
+
+Generates contract + implementation into an **existing** feature.
+
+```bash
+devkit generate feature products --remote
+devkit generate repository products --feature products --crud
+```
+
+| Flag | Effect |
+|------|--------|
+| `--crud` / `--pagination` / `--search` | API surface |
+| `--remote` / `--no-remote` | require remote datasource (default on) |
+| `--local` | require local datasource |
+
+**Fail-closed:** missing entity/model/datasource → clear error, no files written.
+
+---
+
+## `service`
+
+```bash
+devkit generate service NotificationService
+```
+
+Interface + implementation (+ optional test using `flutter_test` in Flutter apps).
+
+---
+
+## `enum`
+
+```bash
+devkit generate enum OrderStatus --values pending,shipped,delivered
+```
+
+`--values` is required.
+
+---
+
+## `extension`
+
+```bash
+devkit generate extension StringX --on String
+```
+
+---
+
+## `test`
+
+```bash
+devkit generate test Product --kind unit --target model
+devkit generate test ProductCard --kind widget --target widget
+```
+
+| Flag | Values |
+|------|--------|
+| `--kind` | `unit` (default), `widget` |
+| `--target` | logical folder/type hint (`model`, `service`, …) |
+
+---
+
+## `api` (OpenAPI)
+
+```bash
+devkit generate api shop --spec openapi.yaml
+devkit generate api shop --spec openapi.json --base-url https://api.example.com --force
+```
+
+| Flag | Meaning |
+|------|---------|
+| `--spec` | **Required** OpenAPI 3.x YAML/JSON |
+| `--base-url` | Override `servers[0]` |
+| `--output` | Default `lib/api/<name>` |
+
+Output lives under `generated/` for safe regeneration. See [OPENAPI.md](OPENAPI.md).
+
+---
+
+## UI + Chico dependencies
+
+When `chico.ui` / `chico.kit` are enabled, widget/screen/feature UI imports Chico
+packages. Missing or incompatible pubspec constraints fail with actionable
+errors. Use:
+
+```bash
+devkit add chico_ui
+# or
+devkit generate widget X --add-missing-chico
+```
+
+---
+
+## Adding a generator (contributors)
 
 1. Implement `Generator` (or extend `BaseGenerator`)
-2. Register it in `createDefaultGeneratorRegistry()`
-3. Add focused unit tests under `test/generators/`
+2. Register in `createDefaultGeneratorRegistry()`
+3. Add unit tests under `test/generators/`

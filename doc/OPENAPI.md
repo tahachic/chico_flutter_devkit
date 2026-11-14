@@ -5,6 +5,8 @@ devkit generate api shop --spec path/to/openapi.yaml
 devkit generate api shop --spec openapi.json --base-url https://api.example.com --force
 ```
 
+Related: [Support matrix](../OPENAPI_SUPPORT_MATRIX.md) · [Cookbook](COOKBOOK.md#openapi-client) · [Generator guide](GENERATOR_GUIDE.md#api-openapi)
+
 ## Supported OpenAPI subset
 
 DevKit parses **OpenAPI 3.0 / 3.1** YAML or JSON and generates only from the

@@ -2,6 +2,8 @@
 
 DevKit uses a versioned YAML configuration file.
 
+Related: [Getting started](GETTING_STARTED.md) · [Command reference](COMMAND_REFERENCE.md#config)
+
 ## Locations
 
 | Scope | Path |

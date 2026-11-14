@@ -1,5 +1,8 @@
 # Architecture
 
+Contributor-oriented overview of how the DevKit CLI is structured.
+New users should start with [GETTING_STARTED.md](GETTING_STARTED.md).
+
 ## Purpose
 
 Chico Flutter DevKit (`devkit`) is a pure Dart CLI that accelerates Flutter

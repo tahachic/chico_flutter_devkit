@@ -6,6 +6,8 @@ import 'package:chico_flutter_devkit/chico_flutter_devkit.dart';
 ///
 /// Prefer the `devkit` CLI for day-to-day work:
 /// `dart pub global activate chico_flutter_devkit`
+///
+/// Full guides: see the package README and `doc/` on pub.dev.
 void main() {
   stdout.writeln('$productName $packageVersion');
   stdout.writeln('CLI executable: $executableName');

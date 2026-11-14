@@ -1,72 +1,103 @@
-# Getting Started
+# Getting started
 
-## Install (local development)
+This guide takes you from zero to a running Flutter app with DevKit generators.
+
+## 1. Prerequisites
+
+- Flutter SDK on `PATH` (`flutter --version`)
+- Dart SDK (comes with Flutter) `^3.8.0`
+- Git (recommended)
+
+## 2. Install DevKit
 
 ```bash
-dart pub get
-dart run bin/devkit.dart --help
+dart pub global activate chico_flutter_devkit
+devkit --version   # → 1.0.0-dev.10 (or newer)
 ```
 
-## Create a project
+### Windows note
+
+| Shell | How to invoke |
+|-------|----------------|
+| CMD / PowerShell | `devkit …` |
+| Git Bash | `devkit.bat …` |
+
+If the command is not found, add Pub’s bin folder to `PATH`:
+
+`%LOCALAPPDATA%\Pub\Cache\bin`
+
+## 3. Create your first app
 
 ```bash
-dart run bin/devkit.dart create shop_app \
+devkit create shop_app \
   --architecture clean \
   --state bloc \
   --routing go_router \
   --di get_it \
   --org com.example \
   --no-interactive
+
+cd shop_app
 ```
 
-This will:
+What this does:
 
-1. Run `flutter create` (or a test double in unit tests)
-2. Overlay DevKit starter files
-3. Add stack + Chico dependencies
-4. Write `.chico/devkit.yaml`
-5. Optionally generate an example feature
-6. Run `flutter pub get`
+1. Runs `flutter create`
+2. Overlays DevKit starter files (`main.dart`, `app.dart`, router, DI, home)
+3. Adds stack + Chico dependencies
+4. Writes `.chico/devkit.yaml`
+5. Optionally generates an `example` feature
+6. Runs `flutter pub get`
 
-## Add Chico to an existing app
+Details: [CREATE_APP.md](CREATE_APP.md)
 
-```bash
-cd my_app
-dart run /path/to/chico_flutter_devkit/bin/devkit.dart add chico_ui
-dart run /path/to/chico_flutter_devkit/bin/devkit.dart setup chico
-flutter pub get
-```
-
-Verified boot APIs:
-
-```dart
-await ChicoServices.init(baseUrl: 'https://api.example.com');
-runApp(ChicoApp(home: home));
-```
-
-## Generate code
-
-```bash
-devkit generate feature products --crud --pagination
-devkit generate model Product --fields id:String,name:String
-```
-
-## Diagnose and improve quality
+## 4. Verify the project
 
 ```bash
 devkit doctor
-devkit doctor --fix --yes
-devkit analyze
-devkit format
-devkit test
-devkit clean
-devkit upgrade --dry-run
+flutter analyze --fatal-infos
+flutter test
+flutter run
 ```
 
-## Generate an API client from OpenAPI
+## 5. Generate your first feature
 
 ```bash
-devkit generate api shop --spec openapi.yaml
+devkit generate feature products --crud --pagination --search --local
 ```
 
-See [OPENAPI.md](OPENAPI.md). Ready to publish? Follow [RELEASE.md](RELEASE.md).
+This writes a **scaffold** under `lib/features/products/` (entity, model,
+datasources, repository, use case, Bloc, page, widget, tests).
+
+Open the CLI summary: it reports how many methods still need your implementation.
+
+Then analyze:
+
+```bash
+devkit analyze
+```
+
+## 6. Add a model and a screen
+
+```bash
+devkit generate model Product --fields id:String,name:String,price:double?,inStock:bool
+devkit generate screen ProductDetails --feature products
+```
+
+## 7. Common next steps
+
+| I want to… | Do this |
+|------------|---------|
+| Preview without writing | add `--dry-run` |
+| Overwrite generated files | add `--force` |
+| Generate from JSON | `devkit generate model Product --from-json sample.json` |
+| Generate an API client | `devkit generate api shop --spec openapi.yaml` |
+| Fix doctor issues | `devkit doctor --fix --yes` |
+| See all generators | `devkit list generators` |
+
+Continue with:
+
+- [Cookbook](COOKBOOK.md) — full recipes
+- [Generator guide](GENERATOR_GUIDE.md) — every generator
+- [Command reference](COMMAND_REFERENCE.md) — every command
+- [Troubleshooting](TROUBLESHOOTING.md) — when something fails
