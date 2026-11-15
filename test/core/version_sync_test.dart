@@ -70,8 +70,9 @@ String _packageRoot() {
   var dir = Directory.current;
   while (true) {
     if (File(p.join(dir.path, 'pubspec.yaml')).existsSync() &&
-        File(p.join(dir.path, 'lib', 'src', 'core', 'version.dart'))
-            .existsSync()) {
+        File(
+          p.join(dir.path, 'lib', 'src', 'core', 'version.dart'),
+        ).existsSync()) {
       return dir.path;
     }
     final parent = dir.parent;
