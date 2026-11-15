@@ -119,7 +119,7 @@ Created apps (or `devkit setup chico`) can integrate:
 |---------|--------------------|------|
 | [`chico_ui`](https://pub.dev/packages/chico_ui) | `^1.7.0` | `ChicoApp`, design-system widgets |
 | [`chico_kit`](https://pub.dev/packages/chico_kit) | `^1.4.0` | Helpers; re-exports `chico_ui` |
-| [`chico_services`](https://pub.dev/packages/chico_services) | `^1.4.0` | `ChicoServices.init(baseUrl: …)` |
+| [`chico_services`](https://pub.dev/packages/chico_services) | `^1.4.0` (≥ **1.4.1** on Flutter 3.44) | `ChicoServices.init(baseUrl: …)` |
 
 Versions are configurable in `.chico/devkit.yaml`. UI generators **fail closed**
 if required Chico deps are missing (or use `--add-missing-chico`).

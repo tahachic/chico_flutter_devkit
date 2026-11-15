@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.0.0-dev.12
+
+### Notes
+
+- On Flutter 3.44 / AGP 9.0.1, resolve `chico_services` **≥ 1.4.1**
+  (`flutter pub upgrade chico_services`). 1.4.0 pulled `permission_handler` 13
+  (`compileSdk 37`); 1.4.1 caps it so apps keep Flutter’s default compileSdk 36.
+- Default constraint remains `^1.4.0` (allows 1.4.1+).
+
 ## 1.0.0-dev.11
 
 ### Changed
