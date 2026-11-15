@@ -78,7 +78,7 @@ final class TestGenerator extends BaseGenerator {
 
     return '''
 $importHint
-import 'package:test/test.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('$pascal', () {

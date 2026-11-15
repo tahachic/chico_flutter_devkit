@@ -847,7 +847,7 @@ class ${layout.pascal}ListTile extends StatelessWidget {
 
     return '''
 ${layout.packageImport(project, layout.entity)}
-import 'package:test/test.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test('${layout.pascal} equality', () {

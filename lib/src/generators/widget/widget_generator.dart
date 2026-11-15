@@ -1,8 +1,10 @@
+import '../../config/models.dart';
 import '../../fs/write_plan.dart';
 import '../context.dart';
 import '../result.dart';
 import '../runner.dart';
 import '../shared/chico_dependency_guard.dart';
+import '../shared/generated_test_support.dart';
 import '../shared/ui_imports.dart';
 
 /// Generates a reusable Flutter widget.
@@ -53,7 +55,7 @@ final class WidgetGenerator extends BaseGenerator {
               'lib/',
               'package:${context.config.project.name}/',
             ),
-            useChico: useChico,
+            config: context.config,
           ),
         ),
       );
@@ -138,12 +140,15 @@ class $className extends StatelessWidget {
   String _widgetTest({
     required String className,
     required String importPath,
-    required bool useChico,
+    required DevKitConfig config,
   }) {
-    if (useChico) {
+    final imports = GeneratedTestSupport.widgetHarnessImports(
+      config: config,
+      underTestImport: importPath,
+    );
+    if (UiImports.useChico(config)) {
       return '''
-import 'package:flutter_test/flutter_test.dart';
-import '$importPath';
+$imports
 
 void main() {
   testWidgets('$className renders title', (tester) async {
@@ -158,9 +163,7 @@ void main() {
 ''';
     }
     return '''
-import 'package:flutter/material.dart';
-import 'package:flutter_test/flutter_test.dart';
-import '$importPath';
+$imports
 
 void main() {
   testWidgets('$className renders title', (tester) async {

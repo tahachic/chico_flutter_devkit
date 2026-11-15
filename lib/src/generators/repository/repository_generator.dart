@@ -9,6 +9,7 @@ import '../context.dart';
 import '../feature/feature_layout.dart';
 import '../result.dart';
 import '../runner.dart';
+import '../shared/generated_test_support.dart';
 import '../shared/generator_options.dart';
 
 /// Generates repository contract + implementation into an existing feature.
@@ -60,7 +61,9 @@ final class RepositoryGenerator extends BaseGenerator {
     final includeLocal = GeneratorOptions.flag(context, 'local');
     final project = context.config.project.name;
     final generateTests = GeneratorOptions.wantsTests(context);
-    final isFlutter = _isFlutterProject(context.projectRoot);
+    final isFlutter = GeneratedTestSupport.isFlutterProject(
+      context.projectRoot,
+    );
 
     if (!includeRemote && !includeLocal) {
       throw const InvalidUsageException(
@@ -170,13 +173,6 @@ final class RepositoryGenerator extends BaseGenerator {
       );
     }
     return missing;
-  }
-
-  bool _isFlutterProject(String projectRoot) {
-    final pubspec = File(p.join(projectRoot, 'pubspec.yaml'));
-    if (!pubspec.existsSync()) return false;
-    final text = pubspec.readAsStringSync();
-    return text.contains('flutter:') || text.contains('sdk: flutter');
   }
 
   String _contract({
@@ -302,9 +298,7 @@ $extras}
   }
 
   String _test({required String pascal, required bool isFlutter}) {
-    final import = isFlutter
-        ? "import 'package:flutter_test/flutter_test.dart';"
-        : "import 'package:test/test.dart';";
+    final import = GeneratedTestSupport.unitTestImport(isFlutter: isFlutter);
     return '''
 $import
 

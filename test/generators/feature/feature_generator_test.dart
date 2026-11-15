@@ -99,6 +99,21 @@ void main() {
     expect(repo, contains('fetchPage'));
     expect(repo, contains('search'));
     expect(repo, contains('create'));
+
+    final entityTest = File(
+      p.join(
+        tempRoot.path,
+        'test',
+        'features',
+        'products',
+        'products_entity_test.dart',
+      ),
+    ).readAsStringSync();
+    expect(
+      entityTest,
+      contains("import 'package:flutter_test/flutter_test.dart';"),
+    );
+    expect(entityTest, isNot(contains("import 'package:test/test.dart';")));
   });
 
   test('generates layered architecture feature with riverpod', () async {

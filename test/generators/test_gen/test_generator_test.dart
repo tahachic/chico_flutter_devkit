@@ -31,11 +31,12 @@ void main() {
       targetName: 'Product',
       extra: {'kind': 'unit', 'target': 'model'},
     );
+    final unitTest = File(
+      p.join(tempRoot.path, 'test', 'model', 'product_test.dart'),
+    ).readAsStringSync();
     expect(
-      File(
-        p.join(tempRoot.path, 'test', 'model', 'product_test.dart'),
-      ).existsSync(),
-      isTrue,
+      unitTest,
+      contains("import 'package:flutter_test/flutter_test.dart';"),
     );
 
     await runner.run(

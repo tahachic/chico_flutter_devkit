@@ -92,7 +92,7 @@ ${_isBlankBody(onType)}
     if (onType == 'String') {
       return '''
 import 'package:$project/extensions/$snake.dart';
-import 'package:test/test.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test('$extensionName.isBlank', () {
@@ -104,7 +104,7 @@ void main() {
     }
     return '''
 import 'package:$project/extensions/$snake.dart';
-import 'package:test/test.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test('$extensionName on $onType is declared', () {

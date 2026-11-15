@@ -53,4 +53,27 @@ void main() {
     expect(source, contains('class ProductDetailsPage'));
     expect(source, contains('ChicoScaffold'));
   });
+
+  test('chico screen test imports ChicoApp package', () async {
+    final result = await runner.run(
+      projectRoot: tempRoot.path,
+      generatorName: 'screen',
+      targetName: 'Checkout',
+      extra: {'tests': true},
+    );
+
+    expect(result.writes.createdCount, 2);
+    final testSource = File(
+      p.join(
+        tempRoot.path,
+        'test',
+        'presentation',
+        'pages',
+        'checkout_page_test.dart',
+      ),
+    ).readAsStringSync();
+    expect(testSource, contains("import 'package:chico_kit/chico_kit.dart';"));
+    expect(testSource, contains('ChicoApp(home: CheckoutPage())'));
+    expect(testSource, isNot(contains("import 'package:test/test.dart';")));
+  });
 }

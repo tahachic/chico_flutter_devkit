@@ -64,7 +64,7 @@ extension ${pascal}X on $pascal {
           content:
               '''
 import 'package:${context.config.project.name}/enums/$snake.dart';
-import 'package:test/test.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test('$pascal exposes values', () {

@@ -403,7 +403,7 @@ class ${pascal}Provider extends ChangeNotifier {
   }) {
     final pascal = subject.pascalCase;
     return '''
-import 'package:test/test.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test('$pascal ${state.yamlValue} scaffolding exists', () {

@@ -71,4 +71,20 @@ void main() {
       isTrue,
     );
   });
+
+  test('chico widget test imports ChicoApp package', () async {
+    final result = await runner.run(
+      projectRoot: tempRoot.path,
+      generatorName: 'widget',
+      targetName: 'OfferBanner',
+      extra: {'tests': true},
+    );
+
+    expect(result.writes.createdCount, 2);
+    final testSource = File(
+      p.join(tempRoot.path, 'test', 'widgets', 'offer_banner_test.dart'),
+    ).readAsStringSync();
+    expect(testSource, contains("import 'package:chico_kit/chico_kit.dart';"));
+    expect(testSource, contains('ChicoApp('));
+  });
 }

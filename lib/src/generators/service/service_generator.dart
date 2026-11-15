@@ -1,11 +1,8 @@
-import 'dart:io';
-
-import 'package:path/path.dart' as p;
-
 import '../../fs/write_plan.dart';
 import '../context.dart';
 import '../result.dart';
 import '../runner.dart';
+import '../shared/generated_test_support.dart';
 import '../shared/generator_options.dart';
 
 /// Generates a service interface + implementation.
@@ -76,13 +73,9 @@ class ${pascal}Impl implements $pascal {
     ];
 
     if (generateTests) {
-      final pubspec = File(p.join(context.projectRoot, 'pubspec.yaml'));
-      final flutterProject =
-          pubspec.existsSync() &&
-          pubspec.readAsStringSync().contains('flutter:');
-      final testImport = flutterProject
-          ? "import 'package:flutter_test/flutter_test.dart';"
-          : "import 'package:test/test.dart';";
+      final testImport = GeneratedTestSupport.unitTestImport(
+        isFlutter: GeneratedTestSupport.isFlutterProject(context.projectRoot),
+      );
       writes.add(
         PlannedFileWrite(
           relativePath: feature == null

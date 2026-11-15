@@ -133,7 +133,7 @@ ${CodeBuilders.equality(className, fields)}
 
     return '''
 import 'package:$projectName/models/$snake.dart';
-import 'package:test/test.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('$className', () {

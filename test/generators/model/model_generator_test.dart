@@ -48,12 +48,14 @@ void main() {
     expect(source, contains('factory Product.fromJson'));
     expect(source, contains('Map<String, dynamic> toJson()'));
     expect(source, contains('Product copyWith'));
+    final testSource = File(
+      p.join(tempRoot.path, 'test', 'models', 'product_test.dart'),
+    ).readAsStringSync();
     expect(
-      File(
-        p.join(tempRoot.path, 'test', 'models', 'product_test.dart'),
-      ).existsSync(),
-      isTrue,
+      testSource,
+      contains("import 'package:flutter_test/flutter_test.dart';"),
     );
+    expect(testSource, isNot(contains("import 'package:test/test.dart';")));
   });
 
   test('generates model from JSON', () async {

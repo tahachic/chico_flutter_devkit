@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.0.0-dev.13
+
+### Fixed
+
+- Generated unit tests use `package:flutter_test/flutter_test.dart` (Flutter apps
+  do not depend on `package:test`)
+- Screen/widget tests that wrap with `ChicoApp` now import `chico_kit` /
+  `chico_ui` so `flutter analyze` on `test/` succeeds
+- Keep `lib/src/core/version.dart` in sync with `pubspec.yaml` (`1.0.0-dev.13`)
+
 ## 1.0.0-dev.12
 
 ### Notes

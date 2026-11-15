@@ -4,6 +4,7 @@ import '../context.dart';
 import '../result.dart';
 import '../runner.dart';
 import '../shared/chico_dependency_guard.dart';
+import '../shared/generated_test_support.dart';
 import '../shared/ui_imports.dart';
 
 /// Generates a Flutter screen/page with optional state-management wiring.
@@ -54,7 +55,7 @@ final class ScreenGenerator extends BaseGenerator {
               'lib/',
               'package:${context.config.project.name}/',
             ),
-            useChico: useChico,
+            config: context.config,
           ),
         ),
       );
@@ -140,12 +141,15 @@ $body
   String _screenTest({
     required String className,
     required String importPath,
-    required bool useChico,
+    required DevKitConfig config,
   }) {
-    if (useChico) {
+    final imports = GeneratedTestSupport.widgetHarnessImports(
+      config: config,
+      underTestImport: importPath,
+    );
+    if (UiImports.useChico(config)) {
       return '''
-import 'package:flutter_test/flutter_test.dart';
-import '$importPath';
+$imports
 
 void main() {
   testWidgets('$className builds', (tester) async {
@@ -156,9 +160,7 @@ void main() {
 ''';
     }
     return '''
-import 'package:flutter/material.dart';
-import 'package:flutter_test/flutter_test.dart';
-import '$importPath';
+$imports
 
 void main() {
   testWidgets('$className builds', (tester) async {
