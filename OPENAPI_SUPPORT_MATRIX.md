@@ -1,8 +1,8 @@
 # OpenAPI Support Matrix
 
-**Package version:** `1.0.0-dev.10`  
 **Validator:** `lib/src/openapi/support_validator.dart`  
-**Parser:** `lib/src/openapi/parser.dart`
+**Parser:** `lib/src/openapi/parser.dart`  
+(Matrix tracks the current package release — do not hardcode a version here.)
 
 DevKit implements a **documented subset** of OpenAPI 3.x. Unsupported
 constructs **fail closed** (actionable `InvalidUsageException`) and do not

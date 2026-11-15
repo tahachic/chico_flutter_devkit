@@ -44,11 +44,14 @@ devkit generate feature products --dry-run
 ## Publish
 
 1. Clear CRITICAL/HIGH silent-success defects
-2. Bump `pubspec.yaml` / `lib/src/core/version.dart` to the release version
+2. Bump **both** `pubspec.yaml` and `lib/src/core/version.dart` to the same
+   version (never docs-only version strings — `dart test` enforces sync)
 3. Update `CHANGELOG.md`
-4. Tag the release (`v1.0.0`) — **manual only**
-5. `dart pub publish`
-6. Verify `dart pub global activate chico_flutter_devkit`
+4. Confirm shipping docs do **not** hardcode a package version string (README,
+   example, `doc/`, `OPENAPI_SUPPORT_MATRIX.md`) — use `devkit --version` instead
+5. Tag the release (`v1.0.0`) — **manual only**
+6. `dart pub publish`
+7. Verify `dart pub global activate chico_flutter_devkit` and `devkit --version`
 
 ## Notes
 

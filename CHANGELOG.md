@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.0.0-dev.14
+
+### Fixed
+
+- Remove hardcoded `1.0.0-dev.10` from README / example / docs (pub.dev was
+  showing a stale version)
+- Add `version_sync_test` so pubspec ↔ `packageVersion` and shipping docs cannot
+  drift again
+
 ## 1.0.0-dev.13
 
 ### Fixed

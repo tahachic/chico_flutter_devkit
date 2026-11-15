@@ -32,10 +32,10 @@ dart pub get
 dart run devkit_example.dart
 ```
 
-Expected output shape:
+Expected output shape (version matches the installed package):
 
 ```text
-Chico Flutter DevKit 1.0.0-dev.10
+Chico Flutter DevKit <packageVersion>
 CLI executable: devkit
 NameConverter: order_item → OrderItem / order_item / orderItem
 Default stack: clean + bloc

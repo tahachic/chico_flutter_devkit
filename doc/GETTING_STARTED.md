@@ -12,7 +12,7 @@ This guide takes you from zero to a running Flutter app with DevKit generators.
 
 ```bash
 dart pub global activate chico_flutter_devkit
-devkit --version   # → 1.0.0-dev.10 (or newer)
+devkit --version   # prints the installed package version
 ```
 
 ### Windows note

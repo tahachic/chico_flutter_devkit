@@ -3,7 +3,7 @@
 Professional Flutter development toolkit — create apps, generate Clean Architecture
 features, integrate Chico packages, diagnose projects, and generate OpenAPI clients.
 
-**CLI:** `devkit` · **Version:** `1.0.0-dev.10` · **License:** MIT
+**CLI:** `devkit` · **License:** MIT · Version: run `devkit --version` (or see pub.dev)
 
 > On **Git Bash (Windows)**, Pub installs `devkit.bat`. Use `devkit.bat …` or run
 > commands from **CMD / PowerShell** where `devkit` works.
