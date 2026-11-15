@@ -17,6 +17,27 @@ final class FieldSpec {
 
   String get jsonKey => name;
 
+  /// Literal used when seeding demo datasource rows.
+  String sampleLiteral(int index) {
+    if (isNullable && index > 2) {
+      return 'null';
+    }
+    return switch (type) {
+      'String' => name == 'id' ? "'$index'" : "'${_titleCase(name)} $index'",
+      'int' => '$index',
+      'double' => '$index.5',
+      'bool' => index.isEven ? 'true' : 'false',
+      'DateTime' => 'DateTime.utc(2026, 1, $index)',
+      _ when type.startsWith('List<') => 'const []',
+      _ => isNullable ? 'null' : "''",
+    };
+  }
+
+  static String _titleCase(String value) {
+    if (value.isEmpty) return value;
+    return '${value[0].toUpperCase()}${value.substring(1)}';
+  }
+
   Map<String, Object?> toTemplateVars() => {
     'name': name,
     'type': type,

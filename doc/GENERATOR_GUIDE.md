@@ -12,7 +12,8 @@ Always available shared flags: `--dry-run`, `--force` / `-f`, `--tests` /
 
 ## `feature`
 
-Scaffold a feature for the project architecture (domain/data/presentation).
+Generate a **runnable demo feature** (domain/data/presentation): seeded
+in-memory list, wired state, GoRoute, get_it registration, and a Home link.
 
 ```bash
 devkit generate feature products
@@ -29,8 +30,8 @@ devkit generate feature catalog --architecture layered --state riverpod --no-tes
 | `--remote` / `--no-remote` | remote datasource (default on) |
 | `--fields` | entity/model fields |
 
-**Honest scaffold:** datasources / some state methods may throw
-`UnimplementedError`. The CLI summary reports pending implementation counts.
+Open **Home → feature name** or `/features/<name>` after generate. Demo data
+is not production CRUD — swap the datasource for your API when ready.
 
 ### Layout (clean / feature-first)
 
@@ -93,7 +94,8 @@ devkit generate cubit Cart --feature products
 devkit generate provider Session --state riverpod
 ```
 
-These are state scaffolds — wire them into pages yourself (TODOs are included).
+Standalone state files are scaffolds. Prefer `generate feature`, which wires
+state into a working list page.
 
 ---
 

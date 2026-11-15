@@ -28,11 +28,23 @@ abstract final class AppScaffold {
         content: _router(options),
         mode: FileWriteMode.overwrite,
       ),
+      if (options.routing == Routing.goRouter)
+        PlannedFileWrite(
+          relativePath: 'lib/core/routing/feature_routes.dart',
+          content: _featureRoutes(),
+          mode: FileWriteMode.overwrite,
+        ),
       PlannedFileWrite(
         relativePath: 'lib/core/di/injector.dart',
         content: _di(options),
         mode: FileWriteMode.overwrite,
       ),
+      if (options.dependencyInjection == DependencyInjection.getIt)
+        PlannedFileWrite(
+          relativePath: 'lib/core/di/feature_registrations.dart',
+          content: _featureRegistrations(),
+          mode: FileWriteMode.overwrite,
+        ),
       PlannedFileWrite(
         relativePath: 'lib/features/home/presentation/pages/home_page.dart',
         content: _homePage(options),
@@ -120,6 +132,9 @@ $prelude
         options.enableChicoUi ||
         options.enableChicoKit ||
         options.enableChicoServices;
+    final useRiverpod =
+        options.stateManagement == StateManagement.riverpod ||
+        options.dependencyInjection == DependencyInjection.riverpod;
     // Chico roots use ChicoApp + Color from flutter/widgets — do not import
     // package:flutter/material.dart (deprecated after Flutter 3.47; fails
     // `flutter analyze --fatal-infos` on current stable).
@@ -129,6 +144,11 @@ $prelude
       imports.writeln(ChicoBootSnippets.importLine(options.chicoConfig));
     } else {
       imports.writeln("import 'package:flutter/material.dart';");
+    }
+    if (useRiverpod) {
+      imports.writeln(
+        "import 'package:flutter_riverpod/flutter_riverpod.dart';",
+      );
     }
     if (options.routing == Routing.goRouter) {
       imports.writeln("import 'core/routing/app_router.dart';");
@@ -144,6 +164,7 @@ $prelude
       homeWidget: 'const HomePage()',
       routerGetter: 'AppRouter.router',
     );
+    final wrapped = useRiverpod ? 'ProviderScope(child: $root)' : root;
 
     return '''
 $imports
@@ -153,7 +174,7 @@ class ${pascal}App extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return $root;
+    return $wrapped;
   }
 }
 ''';
@@ -205,6 +226,7 @@ abstract final class AppTheme {
 import 'package:go_router/go_router.dart';
 
 import '../../features/home/presentation/pages/home_page.dart';
+import 'feature_routes.dart';
 
 /// Application router.
 abstract final class AppRouter {
@@ -214,6 +236,7 @@ abstract final class AppRouter {
         path: '/',
         builder: (context, state) => const HomePage(),
       ),
+      ...featureRoutes,
     ],
   );
 }
@@ -229,35 +252,58 @@ abstract final class AppRouter {
 ''';
   }
 
+  static String _featureRoutes() => '''
+import 'package:go_router/go_router.dart';
+
+// <devkit:feature-route-imports>
+// </devkit:feature-route-imports>
+
+/// GoRoutes appended by `devkit generate feature`.
+List<RouteBase> get featureRoutes => [
+  // <devkit:feature-routes>
+  // </devkit:feature-routes>
+];
+''';
+
+  static String _featureRegistrations() => '''
+import 'package:get_it/get_it.dart';
+
+// <devkit:feature-di-imports>
+// </devkit:feature-di-imports>
+
+/// Feature DI registrations appended by `devkit generate feature`.
+void registerFeatures(GetIt getIt) {
+  // <devkit:feature-registrations>
+  // </devkit:feature-registrations>
+}
+''';
+
   static String _di(ProjectCreateOptions options) {
     return switch (options.dependencyInjection) {
       DependencyInjection.getIt =>
         '''
 import 'package:get_it/get_it.dart';
 
+import 'feature_registrations.dart';
+
 final GetIt getIt = GetIt.instance;
 
 /// Registers app-wide dependencies (get_it scaffold).
 Future<void> configureDependencies() async {
-  // TODO(devkit): register feature repositories/services with getIt.
+  registerFeatures(getIt);
 }
 ''',
       DependencyInjection.riverpod =>
         '''
-/// Riverpod composition-root stub.
+/// Riverpod composition root.
 ///
-/// Providers should live beside features; this method exists so main() can
-/// await a shared bootstrap hook. It does not register providers for you.
-Future<void> configureDependencies() async {
-  // TODO(devkit): no get_it registry — declare ProviderScope/providers in UI.
-}
+/// Feature providers live beside features; [ProviderScope] wraps the app.
+Future<void> configureDependencies() async {}
 ''',
       DependencyInjection.manual =>
         '''
 /// Manual DI composition-root stub.
-Future<void> configureDependencies() async {
-  // TODO(devkit): construct and hold services explicitly at the app root.
-}
+Future<void> configureDependencies() async {}
 ''',
     };
   }
@@ -267,6 +313,7 @@ Future<void> configureDependencies() async {
         options.enableChicoUi ||
         options.enableChicoKit ||
         options.enableChicoServices;
+    final title = options.normalizedName.pascalCase;
     if (useChico) {
       return '''
 ${ChicoBootSnippets.importLine(options.chicoConfig)}
@@ -279,11 +326,18 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChicoScaffold(
-      bar: const ChicoBar(title: '${options.normalizedName.pascalCase}'),
-      body: const ChicoPage(
-        child: ChicoText(
-          'Welcome to ${options.normalizedName.pascalCase}',
-          variant: ChicoTextVariant.title,
+      bar: const ChicoBar(title: '$title'),
+      body: ChicoPage(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const ChicoText(
+              'Welcome to $title',
+              variant: ChicoTextVariant.title,
+            ),
+            // <devkit:home-features>
+            // </devkit:home-features>
+          ],
         ),
       ),
     );
@@ -302,9 +356,16 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('${options.normalizedName.pascalCase}')),
-      body: const Center(
-        child: Text('Welcome to ${options.normalizedName.pascalCase}'),
+      appBar: AppBar(title: const Text('$title')),
+      body: ListView(
+        children: [
+          const Padding(
+            padding: EdgeInsets.all(16),
+            child: Text('Welcome to $title'),
+          ),
+          // <devkit:home-features>
+          // </devkit:home-features>
+        ],
       ),
     );
   }

@@ -114,6 +114,113 @@ void main() {
       contains("import 'package:flutter_test/flutter_test.dart';"),
     );
     expect(entityTest, isNot(contains("import 'package:test/test.dart';")));
+
+    final remote = File(
+      p.join(root, 'data', 'datasources', 'products_remote_datasource.dart'),
+    ).readAsStringSync();
+    expect(remote, contains('_items'));
+    expect(remote, contains('Name 1'));
+    expect(remote, contains('fetchAll'));
+
+    final page = File(
+      p.join(root, 'presentation', 'pages', 'products_page.dart'),
+    ).readAsStringSync();
+    expect(page, contains('BlocProvider'));
+    expect(page, contains('ProductsStarted'));
+    expect(page, contains('ProductsListTile'));
+    expect(page, isNot(contains('TODO(devkit)')));
+
+    final routes = File(
+      p.join(tempRoot.path, 'lib', 'core', 'routing', 'feature_routes.dart'),
+    ).readAsStringSync();
+    expect(routes, contains("/features/products"));
+    expect(routes, contains('ProductsPage'));
+  });
+
+  test('riverpod feature has no UnimplementedError', () async {
+    final base = DevKitConfigDefaults.create(projectName: 'shop_app');
+    final runner = await buildRunner(
+      base.copyWith(
+        flutter: base.flutter.copyWith(
+          stateManagement: StateManagement.riverpod,
+        ),
+      ),
+    );
+
+    await Directory(
+      p.join(tempRoot.path, 'lib', 'core', 'routing'),
+    ).create(recursive: true);
+    await File(
+      p.join(tempRoot.path, 'lib', 'core', 'routing', 'feature_routes.dart'),
+    ).writeAsString('''
+import 'package:go_router/go_router.dart';
+// <devkit:feature-route-imports>
+// </devkit:feature-route-imports>
+List<RouteBase> get featureRoutes => [
+  // <devkit:feature-routes>
+  // </devkit:feature-routes>
+];
+''');
+    await Directory(
+      p.join(tempRoot.path, 'lib', 'features', 'home', 'presentation', 'pages'),
+    ).create(recursive: true);
+    await File(
+      p.join(
+        tempRoot.path,
+        'lib',
+        'features',
+        'home',
+        'presentation',
+        'pages',
+        'home_page.dart',
+      ),
+    ).writeAsString('''
+import 'package:flutter/material.dart';
+class HomePage extends StatelessWidget {
+  const HomePage({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(body: Text('Welcome'));
+    // <devkit:home-features>
+    // </devkit:home-features>
+  }
+}
+''');
+
+    await runner.run(
+      projectRoot: tempRoot.path,
+      generatorName: 'feature',
+      targetName: 'orders',
+      extra: {'tests': false, 'remote': true},
+    );
+
+    final providers = File(
+      p.join(
+        tempRoot.path,
+        'lib',
+        'features',
+        'orders',
+        'presentation',
+        'providers',
+        'orders_providers.dart',
+      ),
+    ).readAsStringSync();
+    expect(providers, isNot(contains('UnimplementedError')));
+    expect(providers, contains('OrdersRepositoryImpl'));
+
+    final page = File(
+      p.join(
+        tempRoot.path,
+        'lib',
+        'features',
+        'orders',
+        'presentation',
+        'pages',
+        'orders_page.dart',
+      ),
+    ).readAsStringSync();
+    expect(page, contains('ConsumerWidget'));
+    expect(page, contains('ordersListProvider'));
   });
 
   test('generates layered architecture feature with riverpod', () async {

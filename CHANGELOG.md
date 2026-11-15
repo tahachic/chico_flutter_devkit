@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.0.0-dev.15
+
+### Added
+
+- **Feature loop:** generated features ship with seeded in-memory data, a wired
+  list page (bloc/cubit/provider/riverpod), GoRoute registration, get_it hooks,
+  and a Home link — open `/features/<name>` with no hand-wiring
+
+### Changed
+
+- Create overlays include `feature_routes.dart` / `feature_registrations.dart`
+  and ProviderScope when Riverpod is selected
+
 ## 1.0.0-dev.14
 
 ### Fixed

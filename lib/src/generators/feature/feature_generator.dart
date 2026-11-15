@@ -8,6 +8,7 @@ import '../shared/chico_dependency_guard.dart';
 import '../shared/code_builders.dart';
 import '../shared/field_spec.dart';
 import '../shared/ui_imports.dart';
+import 'feature_integration.dart';
 import 'feature_layout.dart';
 
 /// Generates a full feature slice for the selected architecture.
@@ -80,6 +81,7 @@ final class FeatureGenerator extends BaseGenerator {
           content: _remoteDatasource(
             layout,
             project: project,
+            fields: fields,
             includeCrud: includeCrud,
             includePagination: includePagination,
             includeSearch: includeSearch,
@@ -88,7 +90,7 @@ final class FeatureGenerator extends BaseGenerator {
       if (includeLocal)
         PlannedFileWrite(
           relativePath: layout.localDatasource,
-          content: _localDatasource(layout, project: project),
+          content: _localDatasource(layout, project: project, fields: fields),
         ),
       PlannedFileWrite(
         relativePath: layout.repositoryImpl,
@@ -102,7 +104,13 @@ final class FeatureGenerator extends BaseGenerator {
           includeSearch: includeSearch,
         ),
       ),
-      ..._stateFiles(layout, state, project: project),
+      ..._stateFiles(
+        layout,
+        state,
+        project: project,
+        includeRemote: includeRemote,
+        includeLocal: includeLocal,
+      ),
       PlannedFileWrite(
         relativePath: layout.page,
         content: _page(
@@ -111,6 +119,9 @@ final class FeatureGenerator extends BaseGenerator {
           project: project,
           useChico: useChico,
           context: context,
+          fields: fields,
+          includeRemote: includeRemote,
+          includeLocal: includeLocal,
           includeSearch: includeSearch,
           includeFilters: includeFilters,
           includePagination: includePagination,
@@ -121,6 +132,15 @@ final class FeatureGenerator extends BaseGenerator {
         content: _listTile(layout, useChico: useChico, context: context),
       ),
     ];
+
+    writes.addAll(
+      FeatureIntegration.planHooks(
+        context: context,
+        layout: layout,
+        includeRemote: includeRemote,
+        includeLocal: includeLocal,
+      ),
+    );
 
     if (generateTests) {
       writes.add(
@@ -141,11 +161,6 @@ final class FeatureGenerator extends BaseGenerator {
       if (includeFilters) 'filters',
     ].join(', ');
 
-    final pending = _pendingImplementationCount(
-      includeRemote: includeRemote,
-      includeLocal: includeLocal,
-      includeCrud: includeCrud,
-    );
     final testCount = writes
         .where((write) => write.relativePath.startsWith('test/'))
         .length;
@@ -154,26 +169,14 @@ final class FeatureGenerator extends BaseGenerator {
       context: context,
       writes: writes,
       message:
-          'Feature ${layout.pascal} scaffold generated '
+          'Feature ${layout.pascal} generated with demo in-memory data '
           '(${architecture.yamlValue}/${state.yamlValue}'
           '${flags.isEmpty ? '' : '; $flags'}).\n'
           'Files planned: ${writes.length}\n'
           'Tests generated: $testCount\n'
-          'Pending implementation: $pending method(s) in datasources/state\n'
-          'This is a scaffold, not a complete connected CRUD implementation.',
+          'Open /features/${layout.snake} from Home (seeded list).\n'
+          'Swap the datasource for a real API when you are ready.',
     );
-  }
-
-  int _pendingImplementationCount({
-    required bool includeRemote,
-    required bool includeLocal,
-    required bool includeCrud,
-  }) {
-    var count = 0;
-    if (includeRemote) count += includeCrud ? 5 : 1; // fetch + optional CRUD
-    if (includeLocal) count += 1;
-    count += 1; // state load wiring
-    return count;
   }
 
   Architecture _architecture(GenerationContext context) {
@@ -295,18 +298,31 @@ class Get${layout.pascal}List {
 ''';
   }
 
+  String _seedModels(FeatureLayout layout, List<FieldSpec> fields) {
+    String row(int index) {
+      final args = fields
+          .map((f) => '      ${f.name}: ${f.sampleLiteral(index)},')
+          .join('\n');
+      return '    ${layout.pascal}Model(\n$args\n    ),';
+    }
+
+    return '${row(1)}\n${row(2)}\n${row(3)}';
+  }
+
   String _remoteDatasource(
     FeatureLayout layout, {
     required String project,
+    required List<FieldSpec> fields,
     required bool includeCrud,
     required bool includePagination,
     required bool includeSearch,
   }) {
+    final seeds = _seedModels(layout, fields);
     final methods = <String>[
       '''
   Future<List<${layout.pascal}Model>> fetchAll() async {
-    // TODO: replace with real API client call.
-    return const <${layout.pascal}Model>[];
+    // Demo in-memory data — replace with your API client when ready.
+    return List<${layout.pascal}Model>.unmodifiable(_items);
   }''',
       if (includePagination)
         '''
@@ -314,40 +330,85 @@ class Get${layout.pascal}List {
     required int page,
     int pageSize = 20,
   }) async {
-    return const <${layout.pascal}Model>[];
+    final start = (page < 1 ? 0 : page - 1) * pageSize;
+    if (start >= _items.length) {
+      return const <${layout.pascal}Model>[];
+    }
+    final end = (start + pageSize).clamp(0, _items.length);
+    return _items.sublist(start, end);
   }''',
       if (includeSearch)
         '''
   Future<List<${layout.pascal}Model>> search(String query) async {
-    return const <${layout.pascal}Model>[];
+    final q = query.trim().toLowerCase();
+    if (q.isEmpty) return fetchAll();
+    return _items
+        .where((item) => item.toString().toLowerCase().contains(q))
+        .toList(growable: false);
   }''',
       if (includeCrud) ...[
         '''
-  Future<${layout.pascal}Model> create(${layout.pascal}Model item) async => item;''',
-        '''
-  Future<${layout.pascal}Model> update(${layout.pascal}Model item) async => item;''',
-        '''
-  Future<void> delete(String id) async {}''',
+  Future<${layout.pascal}Model> create(${layout.pascal}Model item) async {
+    _items.add(item);
+    return item;
+  }''',
+        fields.any((f) => f.name == 'id')
+            ? '''
+  Future<${layout.pascal}Model> update(${layout.pascal}Model item) async {
+    final index = _items.indexWhere((e) => e.id == item.id);
+    if (index >= 0) {
+      _items[index] = item;
+    }
+    return item;
+  }'''
+            : '''
+  Future<${layout.pascal}Model> update(${layout.pascal}Model item) async {
+    final index = _items.indexWhere((e) => e == item);
+    if (index >= 0) {
+      _items[index] = item;
+    }
+    return item;
+  }''',
+        fields.any((f) => f.name == 'id')
+            ? '''
+  Future<void> delete(String id) async {
+    _items.removeWhere((e) => e.id == id);
+  }'''
+            : '''
+  Future<void> delete(String id) async {
+    _items.removeWhere((e) => e.toString().contains(id));
+  }''',
       ],
     ];
 
     return '''
 ${layout.packageImport(project, layout.model)}
 
-/// Generated by Chico Flutter DevKit — remote datasource
+/// Generated by Chico Flutter DevKit — remote datasource (demo in-memory).
 class ${layout.pascal}RemoteDataSource {
+  final List<${layout.pascal}Model> _items = <${layout.pascal}Model>[
+$seeds
+  ];
+
 ${methods.join('\n')}
 }
 ''';
   }
 
-  String _localDatasource(FeatureLayout layout, {required String project}) {
+  String _localDatasource(
+    FeatureLayout layout, {
+    required String project,
+    required List<FieldSpec> fields,
+  }) {
+    final seeds = _seedModels(layout, fields);
     return '''
 ${layout.packageImport(project, layout.model)}
 
-/// Generated by Chico Flutter DevKit — local datasource
+/// Generated by Chico Flutter DevKit — local datasource (demo in-memory).
 class ${layout.pascal}LocalDataSource {
-  final List<${layout.pascal}Model> _cache = <${layout.pascal}Model>[];
+  final List<${layout.pascal}Model> _cache = <${layout.pascal}Model>[
+$seeds
+  ];
 
   Future<List<${layout.pascal}Model>> fetchAll() async =>
       List<${layout.pascal}Model>.unmodifiable(_cache);
@@ -465,6 +526,8 @@ $extras}
     FeatureLayout layout,
     StateManagement state, {
     required String project,
+    required bool includeRemote,
+    required bool includeLocal,
   }) {
     final dir = layout.stateDir(state);
     switch (state) {
@@ -618,6 +681,32 @@ class ${layout.pascal}Cubit extends Cubit<${layout.pascal}State> {
           ),
         ];
       case StateManagement.riverpod:
+        final dsImports = [
+          if (includeRemote)
+            layout.packageImport(project, layout.remoteDatasource),
+          if (includeLocal)
+            layout.packageImport(project, layout.localDatasource),
+        ].join('\n');
+        final dsProviders = [
+          if (includeRemote)
+            '''
+final ${layout.snake}RemoteDataSourceProvider =
+    Provider<${layout.pascal}RemoteDataSource>(
+  (ref) => ${layout.pascal}RemoteDataSource(),
+);''',
+          if (includeLocal)
+            '''
+final ${layout.snake}LocalDataSourceProvider =
+    Provider<${layout.pascal}LocalDataSource>(
+  (ref) => ${layout.pascal}LocalDataSource(),
+);''',
+        ].join('\n');
+        final repoArgs = [
+          if (includeRemote)
+            'remote: ref.watch(${layout.snake}RemoteDataSourceProvider)',
+          if (includeLocal)
+            'local: ref.watch(${layout.snake}LocalDataSourceProvider)',
+        ].join(',\n    ');
         return [
           PlannedFileWrite(
             relativePath: '$dir/${layout.snake}_providers.dart',
@@ -628,12 +717,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 ${layout.packageImport(project, layout.entity)}
 ${layout.packageImport(project, layout.getUseCase)}
 ${layout.packageImport(project, layout.repositoryContract)}
+${layout.packageImport(project, layout.repositoryImpl)}
+$dsImports
 
 /// Generated by Chico Flutter DevKit — riverpod providers
+$dsProviders
+
 final ${layout.snake}RepositoryProvider =
     Provider<${layout.pascal}Repository>((ref) {
-  throw UnimplementedError(
-    'Bind ${layout.pascal}Repository in the composition root.',
+  return ${layout.pascal}RepositoryImpl(
+    $repoArgs,
   );
 });
 
@@ -689,12 +782,44 @@ class ${layout.pascal}Provider extends ChangeNotifier {
     }
   }
 
+  String _titleExpr(List<FieldSpec> fields) {
+    final names = fields.map((f) => f.name).toSet();
+    if (names.contains('name')) return 'item.name';
+    if (names.contains('title')) return 'item.title';
+    if (names.contains('id')) return 'item.id';
+    return 'item.toString()';
+  }
+
+  String _subtitleExpr(List<FieldSpec> fields) {
+    final names = fields.map((f) => f.name).toSet();
+    if (names.contains('description')) return 'item.description';
+    if (names.contains('subtitle')) return 'item.subtitle';
+    return 'null';
+  }
+
+  String _graphConstruction(
+    FeatureLayout layout, {
+    required bool includeRemote,
+    required bool includeLocal,
+  }) {
+    final args = [
+      if (includeRemote) 'remote: ${layout.pascal}RemoteDataSource()',
+      if (includeLocal) 'local: ${layout.pascal}LocalDataSource()',
+    ].join(', ');
+    return '''
+    final repository = ${layout.pascal}RepositoryImpl($args);
+    final getList = Get${layout.pascal}List(repository);''';
+  }
+
   String _page(
     FeatureLayout layout, {
     required StateManagement state,
     required String project,
     required bool useChico,
     required GenerationContext context,
+    required List<FieldSpec> fields,
+    required bool includeRemote,
+    required bool includeLocal,
     required bool includeSearch,
     required bool includeFilters,
     required bool includePagination,
@@ -704,61 +829,390 @@ class ${layout.pascal}Provider extends ChangeNotifier {
       if (includeFilters) '// Filters UI hook enabled.',
       if (includePagination) '// Pagination UI hook enabled.',
     ].map((line) => '    $line').join('\n');
+    final title = _titleExpr(fields);
+    final subtitle = _subtitleExpr(fields);
+    final stateDir = layout.stateDir(state).split('/').last;
+    final tileImport = layout.packageImport(project, layout.listTile);
+    final graph = _graphConstruction(
+      layout,
+      includeRemote: includeRemote,
+      includeLocal: includeLocal,
+    );
 
-    final stateHint = switch (state) {
-      StateManagement.bloc =>
-        '// TODO(devkit): wire BlocProvider<${layout.pascal}Bloc> + ${layout.pascal}ListTile.',
-      StateManagement.cubit =>
-        '// TODO(devkit): wire BlocProvider<${layout.pascal}Cubit> + ${layout.pascal}ListTile.',
-      StateManagement.riverpod =>
-        '// TODO(devkit): use ConsumerWidget + ${layout.pascal} providers/list tile.',
-      StateManagement.provider =>
-        '// TODO(devkit): wire ChangeNotifierProvider + ${layout.pascal}ListTile.',
+    final dataImports = [
+      layout.packageImport(project, layout.getUseCase),
+      layout.packageImport(project, layout.repositoryImpl),
+      if (includeRemote) layout.packageImport(project, layout.remoteDatasource),
+      if (includeLocal) layout.packageImport(project, layout.localDatasource),
+      tileImport,
+    ].join('\n');
+
+    return switch (state) {
+      StateManagement.bloc => _blocPage(
+        layout: layout,
+        useChico: useChico,
+        context: context,
+        hints: hints,
+        title: title,
+        subtitle: subtitle,
+        stateDir: stateDir,
+        dataImports: dataImports,
+        graph: graph,
+      ),
+      StateManagement.cubit => _cubitPage(
+        layout: layout,
+        useChico: useChico,
+        context: context,
+        hints: hints,
+        title: title,
+        subtitle: subtitle,
+        stateDir: stateDir,
+        dataImports: dataImports,
+        graph: graph,
+      ),
+      StateManagement.provider => _providerPage(
+        layout: layout,
+        useChico: useChico,
+        context: context,
+        hints: hints,
+        title: title,
+        subtitle: subtitle,
+        stateDir: stateDir,
+        dataImports: dataImports,
+        graph: graph,
+      ),
+      StateManagement.riverpod => _riverpodPage(
+        layout: layout,
+        project: project,
+        useChico: useChico,
+        context: context,
+        hints: hints,
+        title: title,
+        subtitle: subtitle,
+        stateDir: stateDir,
+        tileImport: tileImport,
+      ),
     };
+  }
 
+  String _scaffold({
+    required bool useChico,
+    required GenerationContext context,
+    required String title,
+    required String body,
+    required String imports,
+  }) {
     if (useChico) {
       return '''
 ${UiImports.packageImport(context.config)}
+$imports
 
-/// Generated by Chico Flutter DevKit — page scaffold
-class ${layout.pascal}Page extends StatelessWidget {
-  const ${layout.pascal}Page({super.key});
+/// Generated by Chico Flutter DevKit — wired demo list page
+class ${title}Page extends StatelessWidget {
+  const ${title}Page({super.key});
 
   @override
   Widget build(BuildContext context) {
-$hints
-    $stateHint
-    return ChicoScaffold(
-      bar: const ChicoBar(title: '${layout.pascal}'),
-      body: const ChicoPage(
-        child: ChicoText(
-          '${layout.pascal} page — connect ${state.yamlValue} state here.',
-        ),
-      ),
-    );
+$body
   }
 }
 ''';
     }
-
     return '''
 import 'package:flutter/material.dart';
+$imports
 
-/// Generated by Chico Flutter DevKit — page scaffold
-class ${layout.pascal}Page extends StatelessWidget {
-  const ${layout.pascal}Page({super.key});
+/// Generated by Chico Flutter DevKit — wired demo list page
+class ${title}Page extends StatelessWidget {
+  const ${title}Page({super.key});
 
   @override
   Widget build(BuildContext context) {
+$body
+  }
+}
+''';
+  }
+
+  String _blocPage({
+    required FeatureLayout layout,
+    required bool useChico,
+    required GenerationContext context,
+    required String hints,
+    required String title,
+    required String subtitle,
+    required String stateDir,
+    required String dataImports,
+    required String graph,
+  }) {
+    final onPressed = useChico ? 'onPressed' : 'onTap';
+    final listBody = useChico
+        ? '''
+      return ChicoScaffold(
+        bar: const ChicoBar(title: '${layout.pascal}'),
+        body: ChicoPage(child: child),
+      );'''
+        : '''
+      return Scaffold(
+        appBar: AppBar(title: const Text('${layout.pascal}')),
+        body: child,
+      );''';
+
+    final build =
+        '''
 $hints
-    $stateHint
+$graph
+    return BlocProvider(
+      create: (_) => ${layout.pascal}Bloc(getList)
+        ..add(const ${layout.pascal}Started()),
+      child: BlocBuilder<${layout.pascal}Bloc, ${layout.pascal}State>(
+        builder: (context, state) {
+          final Widget child = switch (state) {
+            ${layout.pascal}Loading() || ${layout.pascal}Initial() =>
+              const Center(child: Text('Loading…')),
+            ${layout.pascal}Failure(:final message) =>
+              Center(child: Text(message)),
+            ${layout.pascal}Loaded(:final items) when items.isEmpty =>
+              const Center(child: Text('No items')),
+            ${layout.pascal}Loaded(:final items) => ListView.builder(
+                itemCount: items.length,
+                itemBuilder: (context, index) {
+                  final item = items[index];
+                  return ${layout.pascal}ListTile(
+                    title: $title,
+                    subtitle: $subtitle,
+                    $onPressed: () {},
+                  );
+                },
+              ),
+          };
+$listBody
+        },
+      ),
+    );''';
+
+    return _scaffold(
+      useChico: useChico,
+      context: context,
+      title: layout.pascal,
+      imports:
+          '''
+import 'package:flutter_bloc/flutter_bloc.dart';
+$dataImports
+import '../$stateDir/${layout.snake}_bloc.dart';
+import '../$stateDir/${layout.snake}_event.dart';
+import '../$stateDir/${layout.snake}_state.dart';
+''',
+      body: build,
+    );
+  }
+
+  String _cubitPage({
+    required FeatureLayout layout,
+    required bool useChico,
+    required GenerationContext context,
+    required String hints,
+    required String title,
+    required String subtitle,
+    required String stateDir,
+    required String dataImports,
+    required String graph,
+  }) {
+    final onPressed = useChico ? 'onPressed' : 'onTap';
+    final listBody = useChico
+        ? '''
+      return ChicoScaffold(
+        bar: const ChicoBar(title: '${layout.pascal}'),
+        body: ChicoPage(child: child),
+      );'''
+        : '''
+      return Scaffold(
+        appBar: AppBar(title: const Text('${layout.pascal}')),
+        body: child,
+      );''';
+
+    final build =
+        '''
+$hints
+$graph
+    return BlocProvider(
+      create: (_) => ${layout.pascal}Cubit(getList)..load(),
+      child: BlocBuilder<${layout.pascal}Cubit, ${layout.pascal}State>(
+        builder: (context, state) {
+          final Widget child = switch (state) {
+            ${layout.pascal}Loading() || ${layout.pascal}Initial() =>
+              const Center(child: Text('Loading…')),
+            ${layout.pascal}Failure(:final message) =>
+              Center(child: Text(message)),
+            ${layout.pascal}Loaded(:final items) when items.isEmpty =>
+              const Center(child: Text('No items')),
+            ${layout.pascal}Loaded(:final items) => ListView.builder(
+                itemCount: items.length,
+                itemBuilder: (context, index) {
+                  final item = items[index];
+                  return ${layout.pascal}ListTile(
+                    title: $title,
+                    subtitle: $subtitle,
+                    $onPressed: () {},
+                  );
+                },
+              ),
+          };
+$listBody
+        },
+      ),
+    );''';
+
+    return _scaffold(
+      useChico: useChico,
+      context: context,
+      title: layout.pascal,
+      imports:
+          '''
+import 'package:flutter_bloc/flutter_bloc.dart';
+$dataImports
+import '../$stateDir/${layout.snake}_cubit.dart';
+import '../$stateDir/${layout.snake}_state.dart';
+''',
+      body: build,
+    );
+  }
+
+  String _providerPage({
+    required FeatureLayout layout,
+    required bool useChico,
+    required GenerationContext context,
+    required String hints,
+    required String title,
+    required String subtitle,
+    required String stateDir,
+    required String dataImports,
+    required String graph,
+  }) {
+    final onPressed = useChico ? 'onPressed' : 'onTap';
+    final shell = useChico
+        ? '''
+        return ChicoScaffold(
+          bar: const ChicoBar(title: '${layout.pascal}'),
+          body: ChicoPage(child: child),
+        );'''
+        : '''
+        return Scaffold(
+          appBar: AppBar(title: const Text('${layout.pascal}')),
+          body: child,
+        );''';
+
+    final build =
+        '''
+$hints
+$graph
+    return ChangeNotifierProvider(
+      create: (_) => ${layout.pascal}Provider(getList)..load(),
+      child: Consumer<${layout.pascal}Provider>(
+        builder: (context, model, _) {
+          final Widget child;
+          if (model.loading) {
+            child = const Center(child: Text('Loading…'));
+          } else if (model.error != null) {
+            child = Center(child: Text(model.error!));
+          } else if (model.items.isEmpty) {
+            child = const Center(child: Text('No items'));
+          } else {
+            child = ListView.builder(
+              itemCount: model.items.length,
+              itemBuilder: (context, index) {
+                final item = model.items[index];
+                return ${layout.pascal}ListTile(
+                  title: $title,
+                  subtitle: $subtitle,
+                  $onPressed: () {},
+                );
+              },
+            );
+          }
+$shell
+        },
+      ),
+    );''';
+
+    return _scaffold(
+      useChico: useChico,
+      context: context,
+      title: layout.pascal,
+      imports:
+          '''
+import 'package:provider/provider.dart';
+$dataImports
+import '../$stateDir/${layout.snake}_provider.dart';
+''',
+      body: build,
+    );
+  }
+
+  String _riverpodPage({
+    required FeatureLayout layout,
+    required String project,
+    required bool useChico,
+    required GenerationContext context,
+    required String hints,
+    required String title,
+    required String subtitle,
+    required String stateDir,
+    required String tileImport,
+  }) {
+    final onPressed = useChico ? 'onPressed' : 'onTap';
+    final shell = useChico
+        ? '''
+    return ChicoScaffold(
+      bar: const ChicoBar(title: '${layout.pascal}'),
+      body: ChicoPage(child: child),
+    );'''
+        : '''
     return Scaffold(
       appBar: AppBar(title: const Text('${layout.pascal}')),
-      body: const Center(
-        child: Text(
-          '${layout.pascal} page — connect ${state.yamlValue} state here.',        ),
-      ),
+      body: child,
+    );''';
+
+    final uiImports = useChico
+        ? UiImports.packageImport(context.config)
+        : "import 'package:flutter/material.dart';";
+
+    return '''
+$uiImports
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+$tileImport
+${layout.packageImport(project, layout.entity)}
+import '../$stateDir/${layout.snake}_providers.dart';
+
+/// Generated by Chico Flutter DevKit — wired demo list page
+class ${layout.pascal}Page extends ConsumerWidget {
+  const ${layout.pascal}Page({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+$hints
+    final asyncItems = ref.watch(${layout.snake}ListProvider);
+    final Widget child = asyncItems.when(
+      loading: () => const Center(child: Text('Loading…')),
+      error: (error, _) => Center(child: Text('\$error')),
+      data: (items) {
+        if (items.isEmpty) {
+          return const Center(child: Text('No items'));
+        }
+        return ListView.builder(
+          itemCount: items.length,
+          itemBuilder: (context, index) {
+            final item = items[index];
+            return ${layout.pascal}ListTile(
+              title: $title,
+              subtitle: $subtitle,
+              $onPressed: () {},
+            );
+          },
+        );
+      },
     );
+$shell
   }
 }
 ''';

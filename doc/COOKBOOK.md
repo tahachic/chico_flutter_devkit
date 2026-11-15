@@ -29,7 +29,7 @@ devkit create catalog_app \
 
 ---
 
-## Generate a full feature scaffold
+## Generate a runnable feature (demo list)
 
 ```bash
 devkit generate feature products \
@@ -40,8 +40,9 @@ devkit generate feature products \
   --local
 ```
 
-Then open the printed summary — it lists pending implementation points.
-Wire the remote datasource to your real API (or to a generated OpenAPI client).
+Run the app and open **Home → Products** (route `/features/products`). You get
+a seeded in-memory list with state wired. Replace the datasource with your API
+(or an OpenAPI client) when you leave the demo stage.
 
 ---
 
