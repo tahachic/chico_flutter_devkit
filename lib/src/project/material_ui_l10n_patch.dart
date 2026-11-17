@@ -74,18 +74,15 @@ abstract final class MaterialUiL10nPatch {
         source.contains('...GlobalMaterialLocalizations.delegates')) {
       // material_ui re-exports widgets; flutter_localizations is unused once
       // GlobalMaterialLocalizations.delegates covers Material/Cupertino/Widgets.
+      const widgetsImport = "import 'package:flutter/widgets.dart';";
+      const l10nImport =
+          "import 'package:flutter_localizations/flutter_localizations.dart';";
+      source = source.replaceAll('$widgetsImport\n', '');
+      source = source.replaceAll('$l10nImport\n', '');
       source = source.replaceAll(
         RegExp(
-          r"^import 'package:flutter/widgets\.dart';\s*\n",
-          multiLine: true,
-        ),
-        '',
-      );
-      source = source.replaceAll(
-        RegExp(
-          r"^import 'package:flutter_localizations/flutter_localizations\.dart'"
-          r"(?: show [^;]+)?;\s*\n",
-          multiLine: true,
+          r"import 'package:flutter_localizations/flutter_localizations\.dart'"
+          r' show [^;]+;\s*\n',
         ),
         '',
       );
