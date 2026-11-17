@@ -41,7 +41,9 @@ abstract final class UiImports {
     final pubspec = File(p.join(projectRoot, 'pubspec.yaml'));
     if (!pubspec.existsSync()) return false;
     try {
-      final deps = await PubspecEditor.forProject(projectRoot).listDependencies();
+      final deps = await PubspecEditor.forProject(
+        projectRoot,
+      ).listDependencies();
       return deps.containsKey(materialUiPackage);
     } catch (_) {
       return pubspec.readAsStringSync().contains('$materialUiPackage:');

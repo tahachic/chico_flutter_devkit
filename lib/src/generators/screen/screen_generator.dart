@@ -42,11 +42,7 @@ final class ScreenGenerator extends BaseGenerator {
         relativePath: relativePath,
         content: useChico
             ? _chicoScreen(className, state, context)
-            : _materialScreen(
-                className,
-                state,
-                useMaterialUi: useMaterialUi,
-              ),
+            : _materialScreen(className, state, useMaterialUi: useMaterialUi),
       ),
     ];
 

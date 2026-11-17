@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.0.0-dev.25
+
+### Fixed
+
+- `dart format` on files from the Material UI migration (CI format gate)
+
 ## 1.0.0-dev.24
 
 ### Fixed
