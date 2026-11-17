@@ -40,7 +40,7 @@ jobs:
       - run: flutter --version
       - run: dart --version
       - run: dart pub get
-      - run: dart test -t flutter_e2e
+      - run: dart test -t flutter_e2e --concurrency=1 --reporter expanded
         timeout-minutes: 25
 
   # Phase 7 stability: create a Material app and produce a debug APK on each OS.

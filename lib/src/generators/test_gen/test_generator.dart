@@ -97,17 +97,17 @@ void main() {
     required String target,
   }) {
     return '''
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 // TODO: import package:$project widget/page for $pascal.
+// Prefer package:material_ui on Flutter ≥ 3.47 for MaterialApp harnesses.
 
 void main() {
   testWidgets('$pascal builds', (tester) async {
     await tester.pumpWidget(
-      const MaterialApp(
-        home: Scaffold(
-          body: Text('$pascal'),
-        ),
+      const Directionality(
+        textDirection: TextDirection.ltr,
+        child: Center(child: Text('$pascal')),
       ),
     );
     expect(find.text('$pascal'), findsOneWidget);

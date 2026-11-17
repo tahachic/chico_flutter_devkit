@@ -14,7 +14,8 @@ abstract final class ChicoBootSnippets {
     if (chico.ui.enabled) {
       return "import 'package:chico_ui/chico_ui.dart';";
     }
-    return "import 'package:flutter/material.dart';";
+    // Fallback when no Chico packages are enabled (Material apps use UiImports).
+    return "import 'package:flutter/widgets.dart';";
   }
 
   /// `main()` body prelude (async init when services enabled).

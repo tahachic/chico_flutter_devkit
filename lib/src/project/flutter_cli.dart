@@ -1,6 +1,8 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:path/path.dart' as p;
+import 'package:pub_semver/pub_semver.dart';
 
 import '../core/exceptions.dart';
 
@@ -16,6 +18,12 @@ abstract interface class FlutterCli {
 
   /// Runs `flutter gen-l10n` when the project has `l10n.yaml`.
   Future<void> genL10n(String projectRoot);
+
+  /// Whether this Flutter SDK should use standalone `material_ui` (≥ 3.47).
+  Future<bool> supportsMaterialUiPackage();
+
+  /// Runs `dart fix --apply --code=migrate_design_widgets` in [projectRoot].
+  Future<void> migrateDesignWidgets(String projectRoot);
 }
 
 /// Real Flutter CLI implementation using `Process`.
@@ -83,15 +91,52 @@ final class ProcessFlutterCli implements FlutterCli {
       );
     }
   }
+
+  @override
+  Future<bool> supportsMaterialUiPackage() async {
+    final result = await Process.run(flutterExecutable, [
+      '--version',
+      '--machine',
+    ], runInShell: true);
+    if (result.exitCode != 0) return false;
+    try {
+      final raw = (result.stdout as String).trim();
+      final json = jsonDecode(raw) as Map<String, dynamic>;
+      final versionRaw = json['frameworkVersion'] as String?;
+      if (versionRaw == null || versionRaw.isEmpty) return false;
+      final version = Version.parse(versionRaw.split(' ').first);
+      return version >= Version(3, 47, 0);
+    } catch (_) {
+      return false;
+    }
+  }
+
+  @override
+  Future<void> migrateDesignWidgets(String projectRoot) async {
+    final result = await Process.run(
+      'dart',
+      const ['fix', '--apply', '--code=migrate_design_widgets'],
+      workingDirectory: projectRoot,
+      runInShell: true,
+    );
+    if (result.exitCode != 0) {
+      throw ExecutionException(
+        'dart fix migrate_design_widgets failed.',
+        details: '${result.stderr}\n${result.stdout}',
+      );
+    }
+  }
 }
 
 /// Test double that scaffolds a minimal Flutter-like project without Flutter SDK.
 final class FakeFlutterCli implements FlutterCli {
-  FakeFlutterCli();
+  FakeFlutterCli({this.materialUiSupported = false});
 
+  final bool materialUiSupported;
   final List<String> created = [];
   final List<String> pubGetCalls = [];
   final List<String> genL10nCalls = [];
+  final List<String> migrateDesignWidgetsCalls = [];
 
   @override
   Future<void> createProject({
@@ -142,5 +187,13 @@ void main() {
   @override
   Future<void> genL10n(String projectRoot) async {
     genL10nCalls.add(projectRoot);
+  }
+
+  @override
+  Future<bool> supportsMaterialUiPackage() async => materialUiSupported;
+
+  @override
+  Future<void> migrateDesignWidgets(String projectRoot) async {
+    migrateDesignWidgetsCalls.add(projectRoot);
   }
 }

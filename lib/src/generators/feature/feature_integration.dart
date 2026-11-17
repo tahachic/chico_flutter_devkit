@@ -5,6 +5,7 @@ import 'package:path/path.dart' as p;
 import '../../config/models.dart';
 import '../../fs/write_plan.dart';
 import '../context.dart';
+import '../shared/ui_imports.dart';
 import 'feature_layout.dart';
 
 /// Append-safe route / DI / home hooks for generated features.
@@ -40,6 +41,7 @@ abstract final class FeatureIntegration {
     required FeatureLayout layout,
     required bool includeRemote,
     required bool includeLocal,
+    bool useMaterialUi = false,
   }) {
     final project = context.config.project.name;
     final useChico =
@@ -68,6 +70,7 @@ abstract final class FeatureIntegration {
           root: context.projectRoot,
           layout: layout,
           useChico: useChico,
+          useMaterialUi: useMaterialUi,
           projectTitle: context.config.project.name,
           routing: routing,
         ),
@@ -378,13 +381,18 @@ $factoriesEnd
     required bool useChico,
     required String projectTitle,
     required Routing routing,
+    bool useMaterialUi = false,
   }) {
     final pascalProject = _pascalize(projectTitle);
     var source = _read(root, homePagePath);
     if (source == null || !source.contains(homeBegin)) {
       source = useChico
           ? freshChicoHome(projectTitle: pascalProject, routing: routing)
-          : freshMaterialHome(projectTitle: pascalProject, routing: routing);
+          : freshMaterialHome(
+              projectTitle: pascalProject,
+              routing: routing,
+              useMaterialUi: useMaterialUi,
+            );
     }
 
     if (routing == Routing.goRouter &&
@@ -467,12 +475,13 @@ class HomePage extends StatelessWidget {
   static String freshMaterialHome({
     required String projectTitle,
     required Routing routing,
+    bool useMaterialUi = false,
   }) {
     final routerImport = routing == Routing.goRouter
         ? "import 'package:go_router/go_router.dart';\n"
         : '';
     return '''
-import 'package:flutter/material.dart';
+${UiImports.materialImport(useMaterialUi: useMaterialUi)}
 $routerImport
 /// Example home screen.
 class HomePage extends StatelessWidget {

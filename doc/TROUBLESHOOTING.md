@@ -90,10 +90,17 @@ Incompatible version constraints also fail with a clear message — DevKit does
 
 ## `flutter analyze --fatal-infos` fails on Material deprecation
 
-On Flutter 3.47+, `package:flutter/material.dart` may emit deprecation infos.
-Chico-enabled apps created by DevKit import `flutter/widgets.dart` + Chico
-instead. Prefer Chico UI generation, or migrate non-Chico Material apps to
-`package:material_ui` when your Flutter version requires it.
+On Flutter **3.47+**, `package:flutter/material.dart` is deprecated in favor of
+`package:material_ui`. DevKit create detects Flutter ≥ 3.47 and for Material-first
+apps:
+
+- adds `material_ui` (+ `cupertino_ui`)
+- scaffolds with `package:material_ui/material_ui.dart`
+- runs `dart fix --apply --code=migrate_design_widgets` after gen-l10n
+
+Chico-enabled apps keep `flutter/widgets.dart` + Chico (no Material import).
+
+On older Flutter (< 3.47), Material-first apps still use `flutter/material.dart`.
 
 ---
 

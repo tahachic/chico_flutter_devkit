@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.0.0-dev.24
+
+### Fixed
+
+- **Flutter 3.50 Material deprecation:** Material-first `create` on Flutter ≥ 3.47
+  uses `package:material_ui` (+ `dart fix migrate_design_widgets` after gen-l10n)
+  so `flutter analyze --fatal-infos` passes on current stable CI
+
 ## 1.0.0-dev.23
 
 ### Fixed

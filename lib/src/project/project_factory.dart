@@ -10,6 +10,7 @@ import '../fs/safe_file_system.dart';
 import '../generators/feature/feature_generator.dart';
 import '../generators/registry.dart';
 import '../generators/runner.dart';
+import '../generators/shared/ui_imports.dart';
 import '../integrations/chico/chico_integration_service.dart';
 import '../integrations/chico/chico_packages.dart';
 import '../pubspec/pubspec_editor.dart';
@@ -70,17 +71,55 @@ final class ProjectFactory {
       outputDirectory: projectPath,
     );
 
+    final materialApp =
+        !options.enableChicoUi &&
+        !options.enableChicoKit &&
+        !options.enableChicoServices;
+    final useMaterialUi =
+        options.useMaterialUi ||
+        (materialApp && await flutterCli.supportsMaterialUiPackage());
+    final effective = ProjectCreateOptions(
+      name: options.name,
+      organization: options.organization,
+      architecture: options.architecture,
+      stateManagement: options.stateManagement,
+      routing: options.routing,
+      dependencyInjection: options.dependencyInjection,
+      enableChicoUi: options.enableChicoUi,
+      enableChicoKit: options.enableChicoKit,
+      enableChicoServices: options.enableChicoServices,
+      enableLocalization: options.enableLocalization,
+      languages: options.languages,
+      enableDarkMode: options.enableDarkMode,
+      enableLogging: options.enableLogging,
+      enableErrorHandling: options.enableErrorHandling,
+      generateExampleFeature: options.generateExampleFeature,
+      outputDirectory: options.outputDirectory,
+      apiBaseUrl: options.apiBaseUrl,
+      useMaterialUi: useMaterialUi,
+    );
+
     final fs = SafeFileSystem(projectRoot: projectPath, createBackups: false);
-    final overlay = AppScaffold.build(options);
+    final overlay = AppScaffold.build(effective);
     final writeResult = await fs.applyWrites(overlay, force: true);
 
     // Stack dependencies for routing / state / DI / l10n.
     final pubspec = PubspecEditor.forProject(projectPath);
-    await _ensureStackDependencies(pubspec, options);
-    if (options.enableLocalization) {
+    await _ensureStackDependencies(pubspec, effective);
+    if (effective.enableLocalization) {
       await pubspec.ensureSdkDependency('flutter_localizations');
       await pubspec.ensureDependency(packageName: 'intl', constraint: 'any');
       await pubspec.ensureFlutterGenerate(enabled: true);
+    }
+    if (effective.useMaterialUi && materialApp) {
+      await pubspec.ensureDependency(
+        packageName: UiImports.materialUiPackage,
+        constraint: UiImports.materialUiConstraint,
+      );
+      await pubspec.ensureDependency(
+        packageName: UiImports.cupertinoUiPackage,
+        constraint: UiImports.cupertinoUiConstraint,
+      );
     }
 
     final chicoPackages = <String>[];
@@ -109,38 +148,38 @@ final class ProjectFactory {
         ).copyWith(
           project: ProjectConfig(
             name: name,
-            architecture: options.architecture,
-            organization: options.organization,
+            architecture: effective.architecture,
+            organization: effective.organization,
           ),
           flutter: FlutterStackConfig(
-            stateManagement: options.stateManagement,
-            routing: options.routing,
-            dependencyInjection: options.dependencyInjection,
+            stateManagement: effective.stateManagement,
+            routing: effective.routing,
+            dependencyInjection: effective.dependencyInjection,
             localization: LocalizationConfig(
-              enabled: options.enableLocalization,
-              languages: options.enableLocalization
-                  ? (options.languages.isEmpty
+              enabled: effective.enableLocalization,
+              languages: effective.enableLocalization
+                  ? (effective.languages.isEmpty
                         ? const ['en']
-                        : options.languages)
+                        : effective.languages)
                   : const ['en'],
             ),
           ),
           chico: ChicoIntegrationsConfig(
             ui: ChicoPackageToggle(
-              enabled: options.enableChicoUi,
+              enabled: effective.enableChicoUi,
               version: DefaultChicoVersions.ui,
             ),
             kit: ChicoPackageToggle(
-              enabled: options.enableChicoKit,
+              enabled: effective.enableChicoKit,
               version: DefaultChicoVersions.kit,
             ),
             services: ChicoPackageToggle(
-              enabled: options.enableChicoServices,
+              enabled: effective.enableChicoServices,
               version: DefaultChicoVersions.services,
             ),
           ),
           features: FeaturesConfig(
-            defaultArchitecture: options.architecture,
+            defaultArchitecture: effective.architecture,
             generateTests: true,
             generateDocumentation: true,
           ),
@@ -152,7 +191,7 @@ final class ProjectFactory {
       force: true,
     );
 
-    if (options.generateExampleFeature) {
+    if (effective.generateExampleFeature) {
       final runner = GeneratorRunner(
         registry: GeneratorRegistry(generators: [FeatureGenerator()]),
         configService: configService,
@@ -162,7 +201,7 @@ final class ProjectFactory {
         generatorName: 'feature',
         targetName: 'example',
         extra: {
-          'architecture': options.architecture.yamlValue,
+          'architecture': effective.architecture.yamlValue,
           'tests': false,
           'remote': true,
         },
@@ -171,8 +210,12 @@ final class ProjectFactory {
 
     if (runPubGet) {
       await flutterCli.pubGet(projectPath);
-      if (options.enableLocalization) {
+      if (effective.enableLocalization) {
         await flutterCli.genL10n(projectPath);
+      }
+      if (effective.useMaterialUi && materialApp) {
+        // Migrates scaffold + gen-l10n output off deprecated flutter/material.
+        await flutterCli.migrateDesignWidgets(projectPath);
       }
     }
 

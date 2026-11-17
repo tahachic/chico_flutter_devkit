@@ -21,6 +21,7 @@ final class ProjectCreateOptions {
     required this.generateExampleFeature,
     required this.outputDirectory,
     this.apiBaseUrl = 'https://api.example.com',
+    this.useMaterialUi = false,
   });
 
   final String name;
@@ -42,6 +43,10 @@ final class ProjectCreateOptions {
   final bool generateExampleFeature;
   final String outputDirectory;
   final String apiBaseUrl;
+
+  /// Use `package:material_ui` instead of deprecated `flutter/material.dart`
+  /// (Flutter ≥ 3.47 / required for analyze --fatal-infos on 3.50+).
+  final bool useMaterialUi;
 
   String get projectPath => outputDirectory;
 

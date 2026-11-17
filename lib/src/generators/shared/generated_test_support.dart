@@ -27,6 +27,7 @@ abstract final class GeneratedTestSupport {
   static String widgetHarnessImports({
     required DevKitConfig config,
     required String underTestImport,
+    bool useMaterialUi = false,
   }) {
     if (UiImports.useChico(config)) {
       final chico = config.chico.kit.enabled
@@ -36,7 +37,7 @@ abstract final class GeneratedTestSupport {
           '$chico\n'
           "import '$underTestImport';";
     }
-    return "import 'package:flutter/material.dart';\n"
+    return '${UiImports.materialImport(useMaterialUi: useMaterialUi)}\n'
         "import 'package:flutter_test/flutter_test.dart';\n"
         "import '$underTestImport';";
   }

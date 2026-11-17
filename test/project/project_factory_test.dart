@@ -305,6 +305,46 @@ void main() {
     expect(pubspec, isNot(contains('chico_ui')));
   });
 
+  test('Material-first create uses material_ui when Flutter ≥ 3.47', () async {
+    final materialCli = FakeFlutterCli(materialUiSupported: true);
+    final factory = ProjectFactory(
+      configService: configService,
+      flutterCli: materialCli,
+      runPubGet: true,
+    );
+
+    final projectPath = p.join(tempRoot.path, 'material_ui_app');
+    await factory.create(
+      ProjectCreateOptions(
+        name: 'material_ui_app',
+        organization: 'com.example',
+        architecture: Architecture.clean,
+        stateManagement: StateManagement.bloc,
+        routing: Routing.goRouter,
+        dependencyInjection: DependencyInjection.getIt,
+        enableChicoUi: false,
+        enableChicoKit: false,
+        enableChicoServices: false,
+        enableLocalization: true,
+        enableDarkMode: true,
+        enableLogging: true,
+        enableErrorHandling: true,
+        generateExampleFeature: false,
+        outputDirectory: projectPath,
+      ),
+    );
+
+    final app = File(p.join(projectPath, 'lib', 'app.dart')).readAsStringSync();
+    expect(app, contains('package:material_ui/material_ui.dart'));
+    expect(app, isNot(contains('package:flutter/material.dart')));
+    final pubspec = File(
+      p.join(projectPath, 'pubspec.yaml'),
+    ).readAsStringSync();
+    expect(pubspec, contains('material_ui:'));
+    expect(pubspec, contains('cupertino_ui:'));
+    expect(materialCli.migrateDesignWidgetsCalls, contains(projectPath));
+  });
+
   test('CLI create --chico enables Chico stack', () async {
     final app = CliApp(
       configService: configService,
