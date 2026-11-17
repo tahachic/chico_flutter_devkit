@@ -77,4 +77,36 @@ final class PubspecEditor {
     final deps = await listDependencies();
     return deps.containsKey(packageName);
   }
+
+  /// Ensures `dependencies.<name>: { sdk: flutter }` (e.g. flutter_localizations).
+  Future<bool> ensureSdkDependency(String packageName) async {
+    final original = await read();
+    final editor = YamlEditor(original);
+    try {
+      editor.parseAt(['dependencies']);
+    } on ArgumentError {
+      editor.update(['dependencies'], <String, Object?>{});
+    }
+    editor.update(['dependencies', packageName], {'sdk': 'flutter'});
+    final updated = editor.toString();
+    if (updated == original) return false;
+    await file.writeAsString(updated);
+    return true;
+  }
+
+  /// Ensures `flutter: generate: true` for gen-l10n / assets codegen.
+  Future<bool> ensureFlutterGenerate({bool enabled = true}) async {
+    final original = await read();
+    final editor = YamlEditor(original);
+    try {
+      editor.parseAt(['flutter']);
+    } on ArgumentError {
+      editor.update(['flutter'], <String, Object?>{});
+    }
+    editor.update(['flutter', 'generate'], enabled);
+    final updated = editor.toString();
+    if (updated == original) return false;
+    await file.writeAsString(updated);
+    return true;
+  }
 }

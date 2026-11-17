@@ -2,6 +2,82 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.0.0-dev.23
+
+### Fixed
+
+- README / example doc links use absolute GitHub URLs so dartdoc on pub.dev does
+  not warn on broken relative paths
+
+## 1.0.0-dev.22
+
+### Added
+
+- **Trust freeze** checklist in `doc/RELEASE.md` (Phase 8 gates before `1.0.0`)
+
+### Fixed
+
+- Publish hygiene: ignore/remove JVM crash dumps; drop stale gitignored OpenAPI
+  fixture that triggered pub dry-run warnings
+
+## 1.0.0-dev.21
+
+### Added
+
+- **Stability CI:** multi-OS `create` → `flutter build apk --debug`, plus Ubuntu
+  `--chico` APK smoke (`.github/workflows/ci.yml`)
+- **Android matrix doc** (`doc/ANDROID.md`) — compileSdk / AGP /
+  `chico_services` / `permission_handler`
+- Default `chico_services` constraint raised to `^1.4.1`
+
+### Fixed
+
+- Drop deprecated `synthetic-package` from generated `l10n.yaml` (Flutter 3.44+)
+
+## 1.0.0-dev.20
+
+### Added
+
+- **OpenAPI HTTP Basic** auth (`username` / `password` → `Authorization: Basic`)
+- **OpenAPI multipart/form-data** uploads (`List<int>` file parts + form fields)
+- Docs/matrix updated for the expanded OpenAPI subset
+
+## 1.0.0-dev.19
+
+### Added
+
+- **Navigator routing:** `--routing navigator` scaffolds Navigator 1.0 named
+  routes (`AppRouter.routes` + feature map); feature Home links use
+  `Navigator.pushNamed`
+- Docs refreshed for Phases 1–4 (README, troubleshooting, cookbook, architecture)
+
+## 1.0.0-dev.18
+
+### Added
+
+- **Real localization:** create writes `l10n.yaml` + ARB files, enables
+  `flutter gen-l10n`, adds `flutter_localizations` / `intl`, and wires
+  `AppLocalizations` into Material/Chico roots and Home
+- `--locales` multi-option for ARB languages (default `en`)
+
+## 1.0.0-dev.17
+
+### Added
+
+- **DI depth:** get_it `core_module` + feature registrations; Riverpod
+  `appContainer` / `UncontrolledProviderScope` + feature provider barrel;
+  manual `AppServices` + `FeatureFactories`
+- Feature pages resolve the graph via `getIt<>()` or `FeatureFactories` when
+  those DI modes are selected
+
+## 1.0.0-dev.16
+
+### Changed
+
+- **Create is Material-first:** `--chico-ui` / `--chico-kit` / `--chico-services`
+  default off; use `--chico` (or interactive confirm / `setup chico`) to opt in
+- Material apps get `AppTheme` wired into `MaterialApp` and a clearer home page
+
 ## 1.0.0-dev.15
 
 ### Added

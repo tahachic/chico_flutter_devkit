@@ -128,12 +128,19 @@ void main() {
     expect(page, contains('BlocProvider'));
     expect(page, contains('ProductsStarted'));
     expect(page, contains('ProductsListTile'));
+    expect(page, contains('getIt<GetProductsList>()'));
     expect(page, isNot(contains('TODO(devkit)')));
+
+    final regs = File(
+      p.join(tempRoot.path, 'lib', 'core', 'di', 'feature_registrations.dart'),
+    ).readAsStringSync();
+    expect(regs, contains('ProductsRepository'));
+    expect(regs, contains('GetProductsList'));
 
     final routes = File(
       p.join(tempRoot.path, 'lib', 'core', 'routing', 'feature_routes.dart'),
     ).readAsStringSync();
-    expect(routes, contains("/features/products"));
+    expect(routes, contains('/features/products'));
     expect(routes, contains('ProductsPage'));
   });
 
@@ -265,6 +272,181 @@ class HomePage extends StatelessWidget {
       ).existsSync(),
       isTrue,
     );
+  });
+
+  test(
+    'navigator routing registers named route and pushNamed home link',
+    () async {
+      final base = DevKitConfigDefaults.create(projectName: 'shop_app');
+      final runner = await buildRunner(
+        base.copyWith(
+          flutter: base.flutter.copyWith(routing: Routing.navigator),
+        ),
+      );
+
+      await Directory(
+        p.join(tempRoot.path, 'lib', 'core', 'routing'),
+      ).create(recursive: true);
+      await File(
+        p.join(tempRoot.path, 'lib', 'core', 'routing', 'feature_routes.dart'),
+      ).writeAsString('''
+import 'package:flutter/widgets.dart';
+// <devkit:feature-route-imports>
+// </devkit:feature-route-imports>
+Map<String, WidgetBuilder> get featureRoutes => {
+  // <devkit:feature-routes>
+  // </devkit:feature-routes>
+};
+''');
+      await Directory(
+        p.join(
+          tempRoot.path,
+          'lib',
+          'features',
+          'home',
+          'presentation',
+          'pages',
+        ),
+      ).create(recursive: true);
+      await File(
+        p.join(
+          tempRoot.path,
+          'lib',
+          'features',
+          'home',
+          'presentation',
+          'pages',
+          'home_page.dart',
+        ),
+      ).writeAsString('''
+import 'package:flutter/material.dart';
+class HomePage extends StatelessWidget {
+  const HomePage({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(body: Text('Welcome'));
+    // <devkit:home-features>
+    // </devkit:home-features>
+  }
+}
+''');
+
+      await runner.run(
+        projectRoot: tempRoot.path,
+        generatorName: 'feature',
+        targetName: 'tickets',
+        extra: {'tests': false, 'remote': true},
+      );
+
+      final routes = File(
+        p.join(tempRoot.path, 'lib', 'core', 'routing', 'feature_routes.dart'),
+      ).readAsStringSync();
+      expect(
+        routes,
+        contains("'/features/tickets': (_) => const TicketsPage()"),
+      );
+      expect(routes, isNot(contains('GoRoute')));
+
+      final home = File(
+        p.join(
+          tempRoot.path,
+          'lib',
+          'features',
+          'home',
+          'presentation',
+          'pages',
+          'home_page.dart',
+        ),
+      ).readAsStringSync();
+      expect(
+        home,
+        contains("Navigator.of(context).pushNamed('/features/tickets')"),
+      );
+    },
+  );
+
+  test('manual DI feature wires FeatureFactories', () async {
+    final base = DevKitConfigDefaults.create(projectName: 'shop_app');
+    final runner = await buildRunner(
+      base.copyWith(
+        flutter: base.flutter.copyWith(
+          dependencyInjection: DependencyInjection.manual,
+        ),
+      ),
+    );
+
+    await Directory(
+      p.join(tempRoot.path, 'lib', 'core', 'di'),
+    ).create(recursive: true);
+    await File(
+      p.join(tempRoot.path, 'lib', 'core', 'di', 'feature_factories.dart'),
+    ).writeAsString('''
+// <devkit:feature-factory-imports>
+// </devkit:feature-factory-imports>
+abstract final class FeatureFactories {
+  // <devkit:feature-factories>
+  // </devkit:feature-factories>
+}
+''');
+
+    await runner.run(
+      projectRoot: tempRoot.path,
+      generatorName: 'feature',
+      targetName: 'catalog',
+      extra: {'tests': false, 'remote': true},
+    );
+
+    final page = File(
+      p.join(
+        tempRoot.path,
+        'lib',
+        'features',
+        'catalog',
+        'presentation',
+        'pages',
+        'catalog_page.dart',
+      ),
+    ).readAsStringSync();
+    expect(page, contains('FeatureFactories.catalogList()'));
+
+    final factories = File(
+      p.join(tempRoot.path, 'lib', 'core', 'di', 'feature_factories.dart'),
+    ).readAsStringSync();
+    expect(factories, contains('static GetCatalogList catalogList()'));
+  });
+
+  test('riverpod DI exports feature providers barrel', () async {
+    final base = DevKitConfigDefaults.create(projectName: 'shop_app');
+    final runner = await buildRunner(
+      base.copyWith(
+        flutter: base.flutter.copyWith(
+          stateManagement: StateManagement.riverpod,
+          dependencyInjection: DependencyInjection.riverpod,
+        ),
+      ),
+    );
+
+    await Directory(
+      p.join(tempRoot.path, 'lib', 'core', 'di'),
+    ).create(recursive: true);
+    await File(
+      p.join(tempRoot.path, 'lib', 'core', 'di', 'feature_providers.dart'),
+    ).writeAsString('''
+// <devkit:feature-provider-exports>
+// </devkit:feature-provider-exports>
+''');
+
+    await runner.run(
+      projectRoot: tempRoot.path,
+      generatorName: 'feature',
+      targetName: 'inbox',
+      extra: {'tests': false, 'remote': true},
+    );
+
+    final barrel = File(
+      p.join(tempRoot.path, 'lib', 'core', 'di', 'feature_providers.dart'),
+    ).readAsStringSync();
+    expect(barrel, contains('inbox_providers.dart'));
   });
 
   test('dry-run lists planned feature files', () async {

@@ -33,13 +33,22 @@ fresh path.
 
 ---
 
-## Create fails: only go_router supported
+## Android build fails (compileSdk / permission_handler)
 
-```text
-Only go_router routing is supported in this release.
-```
+See [ANDROID.md](ANDROID.md). Short version:
 
-Pass `--routing go_router` (the default). Navigator is intentionally rejected.
+- Prefer Material create if you do not need Chico plugins
+- With Chico services, use **`chico_services` ≥ 1.4.1** (caps `permission_handler`)
+- Or create with `--chico --no-chico-services`
+
+---
+
+## Which routing should I pick?
+
+- `--routing go_router` (default) — declarative routes, deep links, `context.go`
+- `--routing navigator` — Navigator 1.0 named routes, `Navigator.pushNamed`
+
+Both get feature Home links and `/features/<name>` registration.
 
 ---
 
@@ -119,10 +128,11 @@ need manual follow-up (`flutter pub get`, `devkit setup chico`, write tests).
 
 ---
 
-## Features contain `UnimplementedError`
+## Feature list shows demo / sample data
 
-Expected. Features are **scaffolds**. The generation summary reports pending
-methods. Replace datasource/state TODOs with real implementations.
+Expected. `generate feature` wires a **seeded in-memory list** so Home → feature
+works out of the box. Replace the datasource (and any remaining TODOs in CRUD
+hooks) with your API or OpenAPI client when you leave the demo stage.
 
 ---
 

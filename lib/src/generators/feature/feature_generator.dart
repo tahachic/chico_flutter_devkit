@@ -801,14 +801,48 @@ class ${layout.pascal}Provider extends ChangeNotifier {
     FeatureLayout layout, {
     required bool includeRemote,
     required bool includeLocal,
+    required DependencyInjection di,
   }) {
-    final args = [
-      if (includeRemote) 'remote: ${layout.pascal}RemoteDataSource()',
-      if (includeLocal) 'local: ${layout.pascal}LocalDataSource()',
-    ].join(', ');
-    return '''
-    final repository = ${layout.pascal}RepositoryImpl($args);
-    final getList = Get${layout.pascal}List(repository);''';
+    return switch (di) {
+      DependencyInjection.getIt =>
+        '    final getList = getIt<Get${layout.pascal}List>();',
+      DependencyInjection.manual =>
+        '    final getList = FeatureFactories.${layout.camel}List();',
+      DependencyInjection.riverpod =>
+        '''
+    final repository = ${layout.pascal}RepositoryImpl(${[if (includeRemote) 'remote: ${layout.pascal}RemoteDataSource()', if (includeLocal) 'local: ${layout.pascal}LocalDataSource()'].join(', ')});
+    final getList = Get${layout.pascal}List(repository);''',
+    };
+  }
+
+  String _pageDataImports({
+    required FeatureLayout layout,
+    required String project,
+    required DependencyInjection di,
+    required bool includeRemote,
+    required bool includeLocal,
+    required String tileImport,
+  }) {
+    return switch (di) {
+      DependencyInjection.getIt => [
+        layout.packageImport(project, layout.getUseCase),
+        "import 'package:$project/core/di/injector.dart';",
+        tileImport,
+      ].join('\n'),
+      DependencyInjection.manual => [
+        layout.packageImport(project, layout.getUseCase),
+        "import 'package:$project/core/di/feature_factories.dart';",
+        tileImport,
+      ].join('\n'),
+      DependencyInjection.riverpod => [
+        layout.packageImport(project, layout.getUseCase),
+        layout.packageImport(project, layout.repositoryImpl),
+        if (includeRemote)
+          layout.packageImport(project, layout.remoteDatasource),
+        if (includeLocal) layout.packageImport(project, layout.localDatasource),
+        tileImport,
+      ].join('\n'),
+    };
   }
 
   String _page(
@@ -833,19 +867,22 @@ class ${layout.pascal}Provider extends ChangeNotifier {
     final subtitle = _subtitleExpr(fields);
     final stateDir = layout.stateDir(state).split('/').last;
     final tileImport = layout.packageImport(project, layout.listTile);
+    final di = context.config.flutter.dependencyInjection;
     final graph = _graphConstruction(
       layout,
       includeRemote: includeRemote,
       includeLocal: includeLocal,
+      di: di,
     );
 
-    final dataImports = [
-      layout.packageImport(project, layout.getUseCase),
-      layout.packageImport(project, layout.repositoryImpl),
-      if (includeRemote) layout.packageImport(project, layout.remoteDatasource),
-      if (includeLocal) layout.packageImport(project, layout.localDatasource),
-      tileImport,
-    ].join('\n');
+    final dataImports = _pageDataImports(
+      layout: layout,
+      project: project,
+      di: di,
+      includeRemote: includeRemote,
+      includeLocal: includeLocal,
+      tileImport: tileImport,
+    );
 
     return switch (state) {
       StateManagement.bloc => _blocPage(

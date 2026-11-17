@@ -13,7 +13,8 @@ Always available shared flags: `--dry-run`, `--force` / `-f`, `--tests` /
 ## `feature`
 
 Generate a **runnable demo feature** (domain/data/presentation): seeded
-in-memory list, wired state, GoRoute, get_it registration, and a Home link.
+in-memory list, wired state, GoRoute, DI hooks (get_it / Riverpod barrel /
+manual factories), and a Home link.
 
 ```bash
 devkit generate feature products
@@ -30,7 +31,8 @@ devkit generate feature catalog --architecture layered --state riverpod --no-tes
 | `--remote` / `--no-remote` | remote datasource (default on) |
 | `--fields` | entity/model fields |
 
-Open **Home → feature name** or `/features/<name>` after generate. Demo data
+Open **Home → feature name** or `/features/<name>` after generate (go_router
+`context.go` or Navigator `pushNamed`, matching create `--routing`). Demo data
 is not production CRUD — swap the datasource for your API when ready.
 
 ### Layout (clean / feature-first)
@@ -172,6 +174,10 @@ devkit generate api shop --spec openapi.json --base-url https://api.example.com 
 | `--spec` | **Required** OpenAPI 3.x YAML/JSON |
 | `--base-url` | Override `servers[0]` |
 | `--output` | Default `lib/api/<name>` |
+
+Supported auth: HTTP bearer, HTTP basic, API key (header/query).  
+Supported bodies: `application/json` and `multipart/form-data` uploads.  
+Unsupported constructs (`oneOf`, OAuth2, …) fail closed before writes.
 
 Output lives under `generated/` for safe regeneration. See [OPENAPI.md](OPENAPI.md).
 

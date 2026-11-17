@@ -36,9 +36,9 @@ final class CreateCommand extends DevKitCommand {
       )
       ..addOption(
         'routing',
-        allowed: const ['go_router'],
+        allowed: Routing.values.map((e) => e.yamlValue).toList(growable: false),
         defaultsTo: Routing.goRouter.yamlValue,
-        help: 'Routing solution (go_router only in this release).',
+        help: 'Routing: go_router (default) or navigator (Navigator 1.0).',
       )
       ..addOption(
         'di',
@@ -46,7 +46,7 @@ final class CreateCommand extends DevKitCommand {
         defaultsTo: DependencyInjection.getIt.yamlValue,
         help:
             'Dependency injection approach '
-            '(get_it fully scaffolded; riverpod/manual are composition-root stubs).',
+            'Composition root: get_it modules, Riverpod container, or manual factories.',
       )
       ..addOption(
         'org',
@@ -63,14 +63,40 @@ final class CreateCommand extends DevKitCommand {
         defaultsTo: true,
         help: 'Prompt for options when flags are omitted.',
       )
-      ..addFlag('chico-ui', defaultsTo: true, help: 'Enable chico_ui.')
-      ..addFlag('chico-kit', defaultsTo: true, help: 'Enable chico_kit.')
+      ..addFlag(
+        'chico',
+        defaultsTo: false,
+        help:
+            'Opt in to the full Chico stack (ui + kit + services). '
+            'Off by default — Material-first create; use setup/add later.',
+      )
+      ..addFlag(
+        'chico-ui',
+        defaultsTo: false,
+        help: 'Enable chico_ui (also implied by --chico).',
+      )
+      ..addFlag(
+        'chico-kit',
+        defaultsTo: false,
+        help: 'Enable chico_kit (also implied by --chico).',
+      )
       ..addFlag(
         'chico-services',
-        defaultsTo: true,
-        help: 'Enable chico_services.',
+        defaultsTo: false,
+        help: 'Enable chico_services (also implied by --chico).',
       )
-      ..addFlag('localization', defaultsTo: true, help: 'Enable localization.')
+      ..addFlag(
+        'localization',
+        defaultsTo: true,
+        help: 'Enable flutter gen-l10n (ARB + l10n.yaml).',
+      )
+      ..addMultiOption(
+        'locales',
+        defaultsTo: const ['en'],
+        help:
+            'Locales for gen-l10n ARB files (e.g. --locales en --locales fr). '
+            'Ignored when --no-localization.',
+      )
       ..addFlag('dark-mode', defaultsTo: true, help: 'Enable dark theme.')
       ..addFlag('logging', defaultsTo: true, help: 'Enable logging helper.')
       ..addFlag(
@@ -127,13 +153,6 @@ final class CreateCommand extends DevKitCommand {
     var di = DependencyInjection.parse(argResults!['di'] as String);
     var org = argResults!['org'] as String;
 
-    if (routing != Routing.goRouter) {
-      throw const InvalidUsageException(
-        'Only go_router routing is supported in this release.',
-        details: 'Pass --routing go_router (the default).',
-      );
-    }
-
     if (interactive && stdin.hasTerminal) {
       architecture = _chooseEnum(
         'Architecture',
@@ -149,7 +168,7 @@ final class CreateCommand extends DevKitCommand {
       );
       routing = _chooseEnum(
         'Routing',
-        const [Routing.goRouter],
+        Routing.values,
         routing,
         (value) => value.yamlValue,
       );
@@ -165,6 +184,42 @@ final class CreateCommand extends DevKitCommand {
 
     final output =
         argResults!['output'] as String? ?? p.join(projectRootProvider(), name);
+
+    var enableChicoUi = argResults!['chico-ui'] as bool;
+    var enableChicoKit = argResults!['chico-kit'] as bool;
+    var enableChicoServices = argResults!['chico-services'] as bool;
+    if (argResults!['chico'] as bool) {
+      enableChicoUi = true;
+      enableChicoKit = true;
+      enableChicoServices = true;
+      // Allow explicit --no-chico-* to peel packages off the full stack.
+      if (argResults!.wasParsed('chico-ui')) {
+        enableChicoUi = argResults!['chico-ui'] as bool;
+      }
+      if (argResults!.wasParsed('chico-kit')) {
+        enableChicoKit = argResults!['chico-kit'] as bool;
+      }
+      if (argResults!.wasParsed('chico-services')) {
+        enableChicoServices = argResults!['chico-services'] as bool;
+      }
+    }
+
+    if (interactive &&
+        stdin.hasTerminal &&
+        !argResults!.wasParsed('chico') &&
+        !argResults!.wasParsed('chico-ui') &&
+        !argResults!.wasParsed('chico-kit') &&
+        !argResults!.wasParsed('chico-services')) {
+      final wantChico = logger.raw.confirm(
+        'Include Chico packages (ui / kit / services)?',
+        defaultValue: false,
+      );
+      if (wantChico) {
+        enableChicoUi = true;
+        enableChicoKit = true;
+        enableChicoServices = true;
+      }
+    }
 
     final flutterCli = _flutterCli ?? ProcessFlutterCli();
     final factory =
@@ -185,10 +240,15 @@ final class CreateCommand extends DevKitCommand {
           stateManagement: state,
           routing: routing,
           dependencyInjection: di,
-          enableChicoUi: argResults!['chico-ui'] as bool,
-          enableChicoKit: argResults!['chico-kit'] as bool,
-          enableChicoServices: argResults!['chico-services'] as bool,
+          enableChicoUi: enableChicoUi,
+          enableChicoKit: enableChicoKit,
+          enableChicoServices: enableChicoServices,
           enableLocalization: argResults!['localization'] as bool,
+          languages: (argResults!['locales'] as List<String>)
+              .expand((e) => e.split(','))
+              .map((e) => e.trim())
+              .where((e) => e.isNotEmpty)
+              .toList(growable: false),
           enableDarkMode: argResults!['dark-mode'] as bool,
           enableLogging: argResults!['logging'] as bool,
           enableErrorHandling: argResults!['error-handling'] as bool,
@@ -200,18 +260,31 @@ final class CreateCommand extends DevKitCommand {
       logger.info('Files overlayed: ${result.writtenFiles.length}');
       if (result.chicoPackages.isNotEmpty) {
         logger.info('Chico packages: ${result.chicoPackages.join(', ')}');
+      } else {
+        logger.info(
+          'Material-first app (no Chico). '
+          'Add later with: devkit setup chico',
+        );
       }
       if (argResults!['localization'] as bool) {
+        final locales = (argResults!['locales'] as List<String>).join(', ');
         logger.info(
-          'Localization: lightweight scaffold only '
-          '(not flutter gen-l10n).',
+          'Localization: flutter gen-l10n '
+          '(l10n.yaml + lib/l10n ARB; locales: $locales).',
         );
       }
-      if (di != DependencyInjection.getIt) {
-        logger.info(
-          'DI ($di): composition-root stub — wire providers/services manually.',
-        );
-      }
+      logger.info(switch (di) {
+        DependencyInjection.getIt =>
+          'DI: get_it (core_module + feature_registrations).',
+        DependencyInjection.riverpod =>
+          'DI: Riverpod (appContainer + UncontrolledProviderScope).',
+        DependencyInjection.manual =>
+          'DI: manual (AppServices + FeatureFactories).',
+      });
+      logger.info(switch (routing) {
+        Routing.goRouter => 'Routing: go_router.',
+        Routing.navigator => 'Routing: Navigator 1.0 (named routes).',
+      });
       logger.success('Next: cd ${result.projectPath} && flutter run');
       return ExitCodes.success;
     } catch (error) {

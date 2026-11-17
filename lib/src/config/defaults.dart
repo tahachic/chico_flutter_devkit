@@ -7,7 +7,7 @@ const int currentSchemaVersion = 1;
 abstract final class DefaultChicoVersions {
   static const String ui = '^1.7.0';
   static const String kit = '^1.4.0';
-  static const String services = '^1.4.0';
+  static const String services = '^1.4.1';
 }
 
 /// Factory for validated default configuration.
@@ -30,13 +30,17 @@ abstract final class DevKitConfigDefaults {
         localization: LocalizationConfig(enabled: true, languages: ['en']),
       ),
       chico: const ChicoIntegrationsConfig(
-        ui: ChicoPackageToggle(enabled: true, version: DefaultChicoVersions.ui),
+        // Opt-in: Material-first defaults; enable via create --chico or setup.
+        ui: ChicoPackageToggle(
+          enabled: false,
+          version: DefaultChicoVersions.ui,
+        ),
         kit: ChicoPackageToggle(
-          enabled: true,
+          enabled: false,
           version: DefaultChicoVersions.kit,
         ),
         services: ChicoPackageToggle(
-          enabled: true,
+          enabled: false,
           version: DefaultChicoVersions.services,
         ),
       ),

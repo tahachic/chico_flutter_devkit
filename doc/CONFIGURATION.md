@@ -53,7 +53,7 @@ chico:
     version: "^1.4.0"
   services:
     enabled: true
-    version: "^1.4.0"
+    version: "^1.4.1"
 
 features:
   default_architecture: clean
@@ -100,8 +100,11 @@ devkit config set flutter.localization.languages [en,fr,ar]
 
 ## Defaults for Chico packages
 
-| Package | Default constraint |
-|---------|--------------------|
-| `chico_ui` | `^1.7.0` |
-| `chico_kit` | `^1.4.0` |
-| `chico_services` | `^1.4.0` |
+New projects default to **`enabled: false`** (Material-first). Constraints below
+are stored so `create --chico`, `setup chico`, and `add` use consistent versions.
+
+| Package | Default constraint | Default enabled |
+|---------|--------------------|-----------------|
+| `chico_ui` | `^1.7.0` | false |
+| `chico_kit` | `^1.4.0` | false |
+| `chico_services` | `^1.4.1` | false |

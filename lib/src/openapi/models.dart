@@ -5,7 +5,31 @@ enum OpenApiHttpMethod { get, post, put, patch, delete }
 
 enum OpenApiParameterLocation { path, query, header }
 
-enum OpenApiAuthType { none, apiKey, bearer }
+enum OpenApiAuthType { none, apiKey, bearer, basic }
+
+enum OpenApiRequestEncoding { none, json, multipart }
+
+/// One part of a `multipart/form-data` request body.
+final class OpenApiMultipartPart {
+  const OpenApiMultipartPart({
+    required this.name,
+    required this.wireName,
+    required this.dartType,
+    required this.required,
+    required this.isFile,
+  });
+
+  /// Dart identifier (camelCase).
+  final String name;
+
+  /// Form field name from the OpenAPI schema property key.
+  final String wireName;
+  final String dartType;
+  final bool required;
+
+  /// `true` when the property is `format: binary` / `byte` (file bytes).
+  final bool isFile;
+}
 
 /// Top-level parsed document.
 final class OpenApiDocument {
@@ -113,7 +137,9 @@ final class OpenApiOperation {
     this.summary,
     this.tag,
     this.parameters = const [],
+    this.requestEncoding = OpenApiRequestEncoding.none,
     this.requestBodyType,
+    this.multipartParts = const [],
     this.successResponseType,
     this.paginated = false,
   });
@@ -125,7 +151,9 @@ final class OpenApiOperation {
   final String? summary;
   final String? tag;
   final List<OpenApiParameter> parameters;
+  final OpenApiRequestEncoding requestEncoding;
   final String? requestBodyType;
+  final List<OpenApiMultipartPart> multipartParts;
   final String? successResponseType;
   final bool paginated;
 }

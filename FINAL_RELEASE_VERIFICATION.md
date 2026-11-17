@@ -1,8 +1,8 @@
 # Final Release Verification
 
 **Package:** `chico_flutter_devkit`  
-**Version inspected:** `1.0.0-dev.8`  
-**Updated:** 2026-11-13 (OpenAPI correctness sprint)  
+**Version inspected:** `1.0.0-dev.8` (baseline) · current ship `1.0.0-dev.22`  
+**Updated:** 2026-11-15 (Phases 1–8 trust freeze docs; no `1.0.0` bump)  
 **Host:** Windows 10 · Dart **3.12.2** · Flutter **3.44.4** (stable)  
 
 Evidence legend:
@@ -39,8 +39,10 @@ No CRITICAL silent-success defects remain in the OpenAPI / Chico-guard paths cov
 |-----|-----------|-------|--------|
 | `unit` | Ubuntu, Windows, macOS | Dart **3.8.0** → format → analyze → `dart test --exclude-tags flutter_e2e` | **Configured** |
 | `flutter_e2e` | Ubuntu only (`needs: unit`) | Flutter **stable**, `cache: false` → `dart test -t flutter_e2e` | **Configured** |
+| `create_apk` | Ubuntu, Windows, macOS | Material `create` → `flutter build apk --debug` | **Configured** (Phase 7) |
+| `create_apk_chico` | Ubuntu | `--chico` create → debug APK | **Configured** (Phase 7) |
 
-Remote Actions success: **Not verified**.
+Remote Actions success: **Not verified** (needs commit + push). Local Windows Material + Chico APK smokes: **Executed** (Phase 7).
 
 ---
 

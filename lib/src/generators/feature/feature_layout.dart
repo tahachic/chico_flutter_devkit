@@ -11,6 +11,11 @@ final class FeatureLayout {
   final String snake;
   final String pascal;
 
+  /// Lower-camel form of [pascal] (`Products` → `products`).
+  String get camel => pascal.isEmpty
+      ? pascal
+      : '${pascal[0].toLowerCase()}${pascal.substring(1)}';
+
   String get featureRoot {
     return switch (architecture) {
       Architecture.clean || Architecture.featureFirst => 'lib/features/$snake',

@@ -22,7 +22,6 @@ void main() {
       'unsupported/discriminator.yaml': 'discriminator',
       'unsupported/oauth2.yaml': 'oauth2',
       'unsupported/openid.yaml': 'openIdConnect',
-      'unsupported/http_basic.yaml': 'http.basic',
       'unsupported/unknown_security.yaml': 'securityScheme.type=mutualTLS',
       'unsupported/mixed_supported_unsupported.yaml': 'oneOf',
     };
@@ -88,6 +87,25 @@ components:
       final doc = parser.parseString(fixture('supported/api_key.yaml'));
       expect(doc.auth.type, OpenApiAuthType.apiKey);
       expect(doc.auth.headerName, 'X-API-Key');
+    });
+
+    test('HTTP basic is supported', () {
+      final doc = parser.parseString(fixture('supported/http_basic.yaml'));
+      expect(doc.auth.type, OpenApiAuthType.basic);
+      expect(doc.auth.headerName, 'Authorization');
+    });
+
+    test('multipart/form-data request bodies are supported', () {
+      final doc = parser.parseString(fixture('supported/multipart.yaml'));
+      expect(doc.operations, isNotEmpty);
+      final op = doc.operations.first;
+      expect(op.requestEncoding, OpenApiRequestEncoding.multipart);
+      expect(op.multipartParts, hasLength(2));
+      expect(op.multipartParts.where((p) => p.isFile).single.wireName, 'file');
+      expect(
+        op.multipartParts.where((p) => !p.isFile).single.wireName,
+        'description',
+      );
     });
   });
 

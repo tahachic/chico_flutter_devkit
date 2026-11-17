@@ -28,3 +28,10 @@ coverage/
 .tmp/
 temp/
 tmp/
+
+# JVM / Dart crash dumps (never publish)
+hs_err_pid*.log
+*.hprof
+
+# Local dartdoc output
+doc/api/

@@ -42,6 +42,7 @@ void main() {
       'doc/OPENAPI.md',
       'doc/RELEASE.md',
       'doc/TEMPLATE_DEVELOPMENT.md',
+      'doc/ANDROID.md',
     ];
 
     final offenders = <String>[];

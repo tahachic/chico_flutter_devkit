@@ -37,6 +37,10 @@ devkit create shop_app \
   --org com.example \
   --no-interactive
 
+# Optional Chico design system:
+#   devkit create shop_app --chico --no-interactive
+# or later:  devkit setup chico
+
 cd shop_app
 ```
 
@@ -44,10 +48,11 @@ What this does:
 
 1. Runs `flutter create`
 2. Overlays DevKit starter files (`main.dart`, `app.dart`, router, DI, home)
-3. Adds stack + Chico dependencies
-4. Writes `.chico/devkit.yaml`
-5. Optionally generates an `example` feature
-6. Runs `flutter pub get`
+3. Adds stack dependencies (Material-first; Chico only with `--chico`)
+4. Sets up `flutter gen-l10n` (`l10n.yaml` + ARB) unless `--no-localization`
+5. Writes `.chico/devkit.yaml`
+6. Optionally generates an `example` feature
+7. Runs `flutter pub get`
 
 Details: [CREATE_APP.md](CREATE_APP.md)
 

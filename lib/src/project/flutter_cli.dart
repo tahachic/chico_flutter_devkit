@@ -13,6 +13,9 @@ abstract interface class FlutterCli {
   });
 
   Future<void> pubGet(String projectRoot);
+
+  /// Runs `flutter gen-l10n` when the project has `l10n.yaml`.
+  Future<void> genL10n(String projectRoot);
 }
 
 /// Real Flutter CLI implementation using `Process`.
@@ -64,6 +67,22 @@ final class ProcessFlutterCli implements FlutterCli {
       );
     }
   }
+
+  @override
+  Future<void> genL10n(String projectRoot) async {
+    final result = await Process.run(
+      flutterExecutable,
+      const ['gen-l10n'],
+      workingDirectory: projectRoot,
+      runInShell: true,
+    );
+    if (result.exitCode != 0) {
+      throw ExecutionException(
+        'flutter gen-l10n failed.',
+        details: '${result.stderr}\n${result.stdout}',
+      );
+    }
+  }
 }
 
 /// Test double that scaffolds a minimal Flutter-like project without Flutter SDK.
@@ -72,6 +91,7 @@ final class FakeFlutterCli implements FlutterCli {
 
   final List<String> created = [];
   final List<String> pubGetCalls = [];
+  final List<String> genL10nCalls = [];
 
   @override
   Future<void> createProject({
@@ -117,5 +137,10 @@ void main() {
   @override
   Future<void> pubGet(String projectRoot) async {
     pubGetCalls.add(projectRoot);
+  }
+
+  @override
+  Future<void> genL10n(String projectRoot) async {
+    genL10nCalls.add(projectRoot);
   }
 }

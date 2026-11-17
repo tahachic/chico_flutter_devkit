@@ -15,6 +15,48 @@ devkit doctor
 flutter run
 ```
 
+Material-first by default (no Chico). Add design system later with
+`devkit setup chico`, or create with `--chico`.
+
+---
+
+## Create with Chico + French locale
+
+```bash
+devkit create shop_app --chico --locales en --locales fr --no-interactive
+```
+
+---
+
+## Create with Riverpod DI (or manual factories)
+
+```bash
+devkit create river_app --state riverpod --di riverpod --no-interactive
+devkit create manual_app --state bloc --di manual --no-interactive
+```
+
+---
+
+## Create with Navigator 1.0 (no go_router)
+
+```bash
+devkit create nav_app --routing navigator --no-interactive
+```
+
+Feature Home links use `Navigator.pushNamed('/features/<name>')`.
+
+---
+
+## Android smoke (debug APK)
+
+```bash
+devkit create android_smoke --no-interactive --no-example-feature
+cd android_smoke
+flutter build apk --debug
+```
+
+Chico path and plugin floors: [ANDROID.md](ANDROID.md).
+
 ---
 
 ## Create a Feature-first + Cubit app without the example feature
@@ -144,6 +186,9 @@ devkit generate api shop --spec openapi.yaml --base-url https://api.example.com 
 
 Regenerate safely — only files under `lib/api/shop/generated/` are replaced.
 Keep wrappers **outside** `generated/`.
+
+Auth helpers cover bearer, basic (`username`/`password`), and API keys.
+Multipart operations emit `List<int>` file params + form fields.
 
 Unsupported constructs (`oneOf`, OAuth2, …) abort with actionable errors.
 See [OPENAPI.md](OPENAPI.md).

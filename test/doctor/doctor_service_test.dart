@@ -84,7 +84,8 @@ dependencies:
     );
     expect(
       File(p.join(tempRoot.path, 'pubspec.yaml')).readAsStringSync(),
-      contains('chico_ui'),
+      isNot(contains('chico_ui')),
+      reason: 'Material-first defaults do not add Chico via doctor fix',
     );
     expect(toolRunner.calls, isEmpty);
   });

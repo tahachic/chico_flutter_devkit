@@ -48,8 +48,9 @@ dart run bin/devkit.dart --help
 ## 60-second quick start
 
 ```bash
-# 1. Create a Flutter app (Clean Architecture + Bloc + Chico + go_router)
+# 1. Create a Flutter app (Clean + Bloc + go_router; Material by default)
 devkit create shop_app --architecture clean --state bloc --no-interactive
+# Opt in to Chico: add --chico  (or later: devkit setup chico)
 cd shop_app
 
 # 2. Diagnose
@@ -69,8 +70,8 @@ devkit test
 flutter run
 ```
 
-Full walkthrough: [doc/GETTING_STARTED.md](doc/GETTING_STARTED.md)  
-End-to-end recipes: [doc/COOKBOOK.md](doc/COOKBOOK.md)
+Full walkthrough: [Getting started](https://github.com/tahachic/chico_flutter_devkit/blob/main/doc/GETTING_STARTED.md)  
+End-to-end recipes: [Cookbook](https://github.com/tahachic/chico_flutter_devkit/blob/main/doc/COOKBOOK.md)
 
 ---
 
@@ -78,15 +79,15 @@ End-to-end recipes: [doc/COOKBOOK.md](doc/COOKBOOK.md)
 
 | Goal | Command | Guide |
 |------|---------|-------|
-| Create a new app | `devkit create <name>` | [Create an app](doc/CREATE_APP.md) |
-| Configure a project | `devkit config init` / `show` / `set` | [Configuration](doc/CONFIGURATION.md) |
-| Add Chico packages | `devkit add` / `setup chico` | [Cookbook](doc/COOKBOOK.md#add-chico-to-an-existing-app) |
-| Generate features, models, UI, state | `devkit generate …` | [Generator guide](doc/GENERATOR_GUIDE.md) |
-| Generate OpenAPI clients | `devkit generate api` | [OpenAPI](doc/OPENAPI.md) |
-| Diagnose / repair | `devkit doctor [--fix]` | [Command reference](doc/COMMAND_REFERENCE.md#doctor) |
-| Analyze / format / test / clean | `devkit analyze` etc. | [Command reference](doc/COMMAND_REFERENCE.md) |
-| Upgrade Chico constraints | `devkit upgrade` | [Command reference](doc/COMMAND_REFERENCE.md#upgrade) |
-| List commands / generators | `devkit list` | [Command reference](doc/COMMAND_REFERENCE.md#list) |
+| Create a new app | `devkit create <name>` | [Create an app](https://github.com/tahachic/chico_flutter_devkit/blob/main/doc/CREATE_APP.md) |
+| Configure a project | `devkit config init` / `show` / `set` | [Configuration](https://github.com/tahachic/chico_flutter_devkit/blob/main/doc/CONFIGURATION.md) |
+| Add Chico packages | `devkit add` / `setup chico` | [Cookbook](https://github.com/tahachic/chico_flutter_devkit/blob/main/doc/COOKBOOK.md#add-chico-to-an-existing-app) |
+| Generate features, models, UI, state | `devkit generate …` | [Generator guide](https://github.com/tahachic/chico_flutter_devkit/blob/main/doc/GENERATOR_GUIDE.md) |
+| Generate OpenAPI clients | `devkit generate api` | [OpenAPI](https://github.com/tahachic/chico_flutter_devkit/blob/main/doc/OPENAPI.md) |
+| Diagnose / repair | `devkit doctor [--fix]` | [Command reference](https://github.com/tahachic/chico_flutter_devkit/blob/main/doc/COMMAND_REFERENCE.md#doctor) |
+| Analyze / format / test / clean | `devkit analyze` etc. | [Command reference](https://github.com/tahachic/chico_flutter_devkit/blob/main/doc/COMMAND_REFERENCE.md) |
+| Upgrade Chico constraints | `devkit upgrade` | [Command reference](https://github.com/tahachic/chico_flutter_devkit/blob/main/doc/COMMAND_REFERENCE.md#upgrade) |
+| List commands / generators | `devkit list` | [Command reference](https://github.com/tahachic/chico_flutter_devkit/blob/main/doc/COMMAND_REFERENCE.md#list) |
 
 ---
 
@@ -94,32 +95,33 @@ End-to-end recipes: [doc/COOKBOOK.md](doc/COOKBOOK.md)
 
 | Doc | Audience | Contents |
 |-----|----------|----------|
-| [Getting started](doc/GETTING_STARTED.md) | New users | Install, first project, first generate |
-| [Create an app](doc/CREATE_APP.md) | New users | Every `create` flag with examples |
-| [Command reference](doc/COMMAND_REFERENCE.md) | Everyone | All commands, flags, exit codes |
-| [Generator guide](doc/GENERATOR_GUIDE.md) | Everyday use | Every generator with copy-paste examples |
-| [Cookbook](doc/COOKBOOK.md) | Everyday use | Real workflows (feature, JSON model, OpenAPI, …) |
-| [Configuration](doc/CONFIGURATION.md) | Everyday use | `.chico/devkit.yaml` schema |
-| [OpenAPI clients](doc/OPENAPI.md) | API work | Supported subset + fail-closed rules |
-| [OpenAPI support matrix](OPENAPI_SUPPORT_MATRIX.md) | API work | Construct-by-construct matrix |
-| [Troubleshooting](doc/TROUBLESHOOTING.md) | When stuck | PATH, analyze, deps, repository prereqs |
-| [Architecture](doc/ARCHITECTURE.md) | Contributors | How the CLI is structured |
-| [Template development](doc/TEMPLATE_DEVELOPMENT.md) | Contributors | Template engine notes |
-| [Release checklist](doc/RELEASE.md) | Maintainers | Publish gates |
-| [Example](example/README.md) | pub.dev / library | Runnable public-API sample |
-| [Changelog](CHANGELOG.md) | Everyone | Version history |
+| [Getting started](https://github.com/tahachic/chico_flutter_devkit/blob/main/doc/GETTING_STARTED.md) | New users | Install, first project, first generate |
+| [Create an app](https://github.com/tahachic/chico_flutter_devkit/blob/main/doc/CREATE_APP.md) | New users | Every `create` flag with examples |
+| [Command reference](https://github.com/tahachic/chico_flutter_devkit/blob/main/doc/COMMAND_REFERENCE.md) | Everyone | All commands, flags, exit codes |
+| [Generator guide](https://github.com/tahachic/chico_flutter_devkit/blob/main/doc/GENERATOR_GUIDE.md) | Everyday use | Every generator with copy-paste examples |
+| [Cookbook](https://github.com/tahachic/chico_flutter_devkit/blob/main/doc/COOKBOOK.md) | Everyday use | Real workflows (feature, JSON model, OpenAPI, …) |
+| [Configuration](https://github.com/tahachic/chico_flutter_devkit/blob/main/doc/CONFIGURATION.md) | Everyday use | `.chico/devkit.yaml` schema |
+| [OpenAPI clients](https://github.com/tahachic/chico_flutter_devkit/blob/main/doc/OPENAPI.md) | API work | Supported subset + fail-closed rules |
+| [OpenAPI support matrix](https://github.com/tahachic/chico_flutter_devkit/blob/main/OPENAPI_SUPPORT_MATRIX.md) | API work | Construct-by-construct matrix |
+| [Android / plugins](https://github.com/tahachic/chico_flutter_devkit/blob/main/doc/ANDROID.md) | Mobile | compileSdk, AGP, `chico_services` / PH |
+| [Troubleshooting](https://github.com/tahachic/chico_flutter_devkit/blob/main/doc/TROUBLESHOOTING.md) | When stuck | PATH, analyze, deps, repository prereqs |
+| [Architecture](https://github.com/tahachic/chico_flutter_devkit/blob/main/doc/ARCHITECTURE.md) | Contributors | How the CLI is structured |
+| [Template development](https://github.com/tahachic/chico_flutter_devkit/blob/main/doc/TEMPLATE_DEVELOPMENT.md) | Contributors | Template engine notes |
+| [Release checklist](https://github.com/tahachic/chico_flutter_devkit/blob/main/doc/RELEASE.md) | Maintainers | Publish gates |
+| [Example](https://github.com/tahachic/chico_flutter_devkit/blob/main/example/README.md) | pub.dev / library | Runnable public-API sample |
+| [Changelog](https://github.com/tahachic/chico_flutter_devkit/blob/main/CHANGELOG.md) | Everyone | Version history |
 
 ---
 
 ## Chico packages
 
-Created apps (or `devkit setup chico`) can integrate:
+Created apps opt in with `devkit create … --chico` or `devkit setup chico`:
 
 | Package | Default constraint | Role |
 |---------|--------------------|------|
 | [`chico_ui`](https://pub.dev/packages/chico_ui) | `^1.7.0` | `ChicoApp`, design-system widgets |
 | [`chico_kit`](https://pub.dev/packages/chico_kit) | `^1.4.0` | Helpers; re-exports `chico_ui` |
-| [`chico_services`](https://pub.dev/packages/chico_services) | `^1.4.0` (≥ **1.4.1** on Flutter 3.44) | `ChicoServices.init(baseUrl: …)` |
+| [`chico_services`](https://pub.dev/packages/chico_services) | `^1.4.1` | `ChicoServices.init(baseUrl: …)` |
 
 Versions are configurable in `.chico/devkit.yaml`. UI generators **fail closed**
 if required Chico deps are missing (or use `--add-missing-chico`).
@@ -133,7 +135,8 @@ if required Chico deps are missing (or use `--add-missing-chico`).
 - **Backups** — overwrite can keep `.bak.*` files (config)
 - **Repository generator** — requires an existing feature; never emits broken imports
 - **OpenAPI** — unsupported constructs (`oneOf`, OAuth2, …) abort with clear errors
-- **Features are scaffolds** — TODOs / `UnimplementedError` where you must wire real code
+- **Features ship a demo list** — seeded in-memory data + Home link; swap the
+  datasource for production APIs when ready
 
 ---
 
@@ -147,7 +150,7 @@ dart pub get
 dart run devkit_example.dart
 ```
 
-See [example/README.md](example/README.md).
+See [example/README.md](https://github.com/tahachic/chico_flutter_devkit/blob/main/example/README.md).
 
 ---
 

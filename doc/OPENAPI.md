@@ -19,9 +19,9 @@ See also [`OPENAPI_SUPPORT_MATRIX.md`](../OPENAPI_SUPPORT_MATRIX.md).
 |------|---------|
 | Paths | `get`, `post`, `put`, `patch`, `delete` |
 | Parameters | path, query, header |
-| Bodies | `application/json` request/response |
+| Bodies | `application/json` request/response; `multipart/form-data` requests |
 | Schemas | objects, enums, arrays, `$ref`, simple `allOf` |
-| Auth | HTTP bearer, API key (header/query) |
+| Auth | HTTP bearer, HTTP basic, API key (header/query) |
 | Pagination | detects `page` / `limit` / `offset` / `cursor` query params |
 | No security | Explicit absence of security ⇒ unauthenticated client |
 
@@ -31,7 +31,7 @@ Unsupported constructs are **rejected before any files are written**.
 Generation does **not** silently:
 
 - turn `oneOf` / `anyOf` / `discriminator` into empty object models
-- turn OAuth2 / OpenID / HTTP Basic / unknown schemes into `AuthType.none`
+- turn OAuth2 / OpenID / unknown schemes into `AuthType.none`
 
 Errors include construct name, JSON/YAML location, reason, and suggested action.
 
@@ -40,11 +40,20 @@ Errors include construct name, JSON/YAML location, reason, and suggested action.
 - `oneOf` / `anyOf` / `not` / discriminators
 - Remote `$ref` (non-`#/components/schemas/…`)
 - Cookie parameters
-- OAuth2 / OpenID Connect / HTTP Basic / unknown security scheme types
-- Form / multipart-only request bodies (no `application/json`)
+- OAuth2 / OpenID Connect / unknown security scheme types
+- Form-urlencoded-only request bodies (no JSON and no multipart)
 - Modeled error response schemas (non-2xx bodies are not typed)
 - `head` / `options` / `trace` operations
 - Callbacks, links, webhooks
+
+## Multipart uploads
+
+When an operation uses `multipart/form-data`:
+
+- Object properties become method parameters
+- `format: binary` / `byte` → `List<int>` (+ optional `…Filename`)
+- Other scalar properties → form fields
+- If both JSON and multipart are listed, **JSON is preferred** for codegen
 
 ## Output layout
 

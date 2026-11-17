@@ -55,14 +55,26 @@ test/
 |---------|---------|-------------|
 | `chico_ui` | `^1.7.0` | `ChicoApp` / `ChicoApp.router` |
 | `chico_kit` | `^1.4.0` | import only (re-exports UI) |
-| `chico_services` | `^1.4.0` | `await ChicoServices.init(baseUrl: …)` |
+| `chico_services` | `^1.4.1` | `await ChicoServices.init(baseUrl: …)` |
 
 Requires Dart `^3.8` and Flutter `>=3.32`.
 
-## Roadmap status
+## Enhancement roadmap status
 
-Phases 1–7 are implemented. Current focus is release stabilization (see
-`AUDIT_REPORT.md` and `RELEASE_READINESS_REPORT.md`).
+| Phase | Theme | Status |
+|------|--------|--------|
+| 1 | Feature loop (demo list + routes/DI) | Shipped |
+| 2 | Material-first create / Chico opt-in | Shipped |
+| 3 | Riverpod + DI depth | Shipped |
+| 4 | Real `flutter gen-l10n` | Shipped |
+| 5 | Broader routing (`navigator` + go_router) | Shipped |
+| 6 | OpenAPI breadth (basic auth + multipart) | Shipped |
+| 7 | Stability product (CI create+APK + Android doc) | Shipped |
+| 8 | Trust / stable release | Planned |
+
+See `CHANGELOG.md` / `devkit --version` for the current package version.
+
+Release hygiene notes: `AUDIT_REPORT.md`, `RELEASE_READINESS_REPORT.md`.
 
 ## Generation pipeline
 

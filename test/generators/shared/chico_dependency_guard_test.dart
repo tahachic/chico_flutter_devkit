@@ -37,7 +37,7 @@ void main() {
   test('passes when required Chico deps are present and compatible', () async {
     await writeFlutterPubspec(tempRoot.path, chicoUi: true, chicoKit: true);
     await ChicoDependencyGuard.ensure(
-      context: context(config: DevKitConfigDefaults.create()),
+      context: context(config: chicoEnabledConfig()),
     );
   });
 
@@ -45,7 +45,7 @@ void main() {
     await writeFlutterPubspec(tempRoot.path);
     expect(
       () => ChicoDependencyGuard.ensure(
-        context: context(config: DevKitConfigDefaults.create()),
+        context: context(config: chicoEnabledConfig()),
       ),
       throwsA(
         isA<InvalidUsageException>().having(
@@ -70,7 +70,7 @@ dependencies:
 ''');
     expect(
       () => ChicoDependencyGuard.ensure(
-        context: context(config: DevKitConfigDefaults.create()),
+        context: context(config: chicoEnabledConfig()),
       ),
       throwsA(
         isA<InvalidUsageException>().having(
@@ -95,7 +95,7 @@ dependencies:
 ''');
     expect(
       () => ChicoDependencyGuard.ensure(
-        context: context(config: DevKitConfigDefaults.create()),
+        context: context(config: chicoEnabledConfig()),
       ),
       throwsA(
         isA<InvalidUsageException>().having(
@@ -124,7 +124,7 @@ dependencies:
     expect(
       () => ChicoDependencyGuard.ensure(
         context: context(
-          config: DevKitConfigDefaults.create(),
+          config: chicoEnabledConfig(),
           dryRun: true,
           extra: {'addMissingChico': true},
         ),
@@ -141,7 +141,7 @@ dependencies:
     await writeFlutterPubspec(tempRoot.path);
     await ChicoDependencyGuard.ensure(
       context: context(
-        config: DevKitConfigDefaults.create(),
+        config: chicoEnabledConfig(),
         extra: {'addMissingChico': true},
       ),
     );
@@ -163,7 +163,7 @@ dependencies:
     // kit missing; ui present with compatible constraint — should only add kit
     await ChicoDependencyGuard.ensure(
       context: context(
-        config: DevKitConfigDefaults.create(),
+        config: chicoEnabledConfig(),
         extra: {'addMissingChico': true},
       ),
     );

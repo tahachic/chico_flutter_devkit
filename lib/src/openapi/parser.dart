@@ -12,9 +12,9 @@ import 'support_validator.dart';
 /// Supported subset:
 /// - `info`, `servers`, `paths` (get/post/put/patch/delete)
 /// - path/query/header parameters
-/// - JSON request/response bodies
+/// - JSON and multipart/form-data request bodies; JSON responses
 /// - `components.schemas` objects, enums, arrays, `$ref`, simple `allOf`
-/// - apiKey / HTTP bearer security schemes
+/// - apiKey / HTTP bearer / HTTP basic security schemes
 ///
 /// Unsupported constructs (`oneOf`, `anyOf`, OAuth2, …) are rejected by
 /// [OpenApiSupportValidator] before IR construction — never silently
@@ -272,16 +272,24 @@ final class OpenApiParser {
     }
 
     String? requestBodyType;
+    var requestEncoding = OpenApiRequestEncoding.none;
+    var multipartParts = const <OpenApiMultipartPart>[];
     final requestBody = _asMap(operation['requestBody']);
     if (requestBody != null) {
       final content = _asMap(requestBody['content']);
       final json = _asMap(content?['application/json']);
+      final multipart = _asMap(content?['multipart/form-data']);
+      // Prefer JSON when both are present (common for dual content types).
       if (json != null) {
+        requestEncoding = OpenApiRequestEncoding.json;
         requestBodyType = _dartTypeForSchema(
           json['schema'],
           schemasRaw,
           nullable: requestBody['required'] != true,
         );
+      } else if (multipart != null) {
+        requestEncoding = OpenApiRequestEncoding.multipart;
+        multipartParts = _multipartParts(multipart['schema'], schemasRaw);
       }
     }
 
@@ -331,10 +339,44 @@ final class OpenApiParser {
           operation['description']?.toString(),
       tag: tag,
       parameters: parameters,
+      requestEncoding: requestEncoding,
       requestBodyType: requestBodyType,
+      multipartParts: multipartParts,
       successResponseType: successResponseType ?? 'void',
       paginated: paginated,
     );
+  }
+
+  List<OpenApiMultipartPart> _multipartParts(
+    Object? schemaRaw,
+    Map<String, Object?> schemasRaw,
+  ) {
+    final resolved = _resolveSchemaMap(schemaRaw, schemasRaw);
+    final properties = _asMap(resolved['properties']) ?? const {};
+    final requiredKeys = <String>{
+      if (resolved['required'] is List)
+        ...(resolved['required'] as List).map((e) => e.toString()),
+    };
+    final parts = <OpenApiMultipartPart>[];
+    for (final entry in properties.entries) {
+      final propMap = _resolveSchemaMap(entry.value, schemasRaw);
+      final format = propMap['format']?.toString();
+      final isFile = format == 'binary' || format == 'byte';
+      final required = requiredKeys.contains(entry.key);
+      final dartType = isFile
+          ? (required ? 'List<int>' : 'List<int>?')
+          : _dartTypeForSchema(entry.value, schemasRaw, nullable: !required);
+      parts.add(
+        OpenApiMultipartPart(
+          name: NameConverter.parse(entry.key).camelCase,
+          wireName: entry.key,
+          dartType: dartType,
+          required: required,
+          isFile: isFile,
+        ),
+      );
+    }
+    return parts;
   }
 
   OpenApiAuthConfig _parseAuth(
@@ -402,13 +444,22 @@ final class OpenApiParser {
         queryName: location == 'query' ? keyName : null,
       );
     }
-    if (type == 'http' &&
-        scheme['scheme']?.toString().toLowerCase() == 'bearer') {
-      return OpenApiAuthConfig(
-        type: OpenApiAuthType.bearer,
-        name: preferred,
-        headerName: 'Authorization',
-      );
+    if (type == 'http') {
+      final httpScheme = scheme['scheme']?.toString().toLowerCase();
+      if (httpScheme == 'bearer') {
+        return OpenApiAuthConfig(
+          type: OpenApiAuthType.bearer,
+          name: preferred,
+          headerName: 'Authorization',
+        );
+      }
+      if (httpScheme == 'basic') {
+        return OpenApiAuthConfig(
+          type: OpenApiAuthType.basic,
+          name: preferred,
+          headerName: 'Authorization',
+        );
+      }
     }
 
     // Defensive: classifier said supported but we cannot map it.

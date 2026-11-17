@@ -252,19 +252,19 @@ abstract final class OpenApiSupportValidator {
     if (content == null || content.isEmpty) return;
 
     final hasJson = content.containsKey('application/json');
-    if (!hasJson) {
+    final hasMultipart = content.containsKey('multipart/form-data');
+    if (!hasJson && !hasMultipart) {
       final mediaList = content.keys.join(', ');
       issues.add(
         OpenApiSupportIssue(
           construct: 'requestBody.content',
           location: location,
           reason:
-              'Request body has no application/json content '
-              '(found: $mediaList). Non-JSON bodies are unsupported and '
-              'must not be silently dropped.',
+              'Request body has neither application/json nor '
+              'multipart/form-data content (found: $mediaList).',
           suggestion:
-              'Add application/json content or remove the requestBody from '
-              'the spec used for generation.',
+              'Add application/json and/or multipart/form-data content, or '
+              'remove the requestBody from the spec used for generation.',
         ),
       );
       // Still walk nested schemas in other media types for composition issues.
@@ -418,19 +418,14 @@ abstract final class OpenApiSupportValidator {
           return (supported: true, construct: 'http.bearer', suggestion: '');
         }
         if (scheme == 'basic') {
-          return (
-            supported: false,
-            construct: 'http.basic',
-            suggestion:
-                'HTTP Basic is not generated. Use HTTP bearer or apiKey, '
-                'or handle Basic auth outside the generated client.',
-          );
+          return (supported: true, construct: 'http.basic', suggestion: '');
         }
         return (
           supported: false,
           construct: 'http.$scheme',
           suggestion:
-              'Only HTTP bearer is supported for http security schemes.',
+              'Only HTTP bearer and basic are supported for http security '
+              'schemes.',
         );
       case 'oauth2':
         return (
@@ -454,7 +449,8 @@ abstract final class OpenApiSupportValidator {
           supported: false,
           construct: 'securityScheme.type=$type',
           suggestion:
-              'Use type apiKey or http (bearer). Unknown schemes are rejected.',
+              'Use type apiKey or http (bearer/basic). Unknown schemes are '
+              'rejected.',
         );
     }
   }

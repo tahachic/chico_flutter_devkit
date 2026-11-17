@@ -45,10 +45,16 @@ Linux/macOS: **Configured only** (CI workflow).
 
 ## Remaining before `1.0.0`
 
-1. Commit package sources (see commit candidate list in `FINAL_RELEASE_VERIFICATION.md`).
-2. Prove GitHub Actions green (unit ×3 OS + Ubuntu E2E).
-3. Re-run publish dry-run on clean tree.
-4. Manual version bump — **not** done in this sprint.
+See **Trust freeze** in `doc/RELEASE.md` (Phase 8). Summary:
+
+1. Commit + push package sources; prove GitHub Actions green (unit ×3 OS,
+   `flutter_e2e`, `create_apk` ×3, `create_apk_chico`).
+2. Manual smoke on ≥2 OS.
+3. Clean publish dry-run; review pub.dev score card for latest prerelease.
+4. Manual version bump to `1.0.0` — **owner approval only** (never auto).
+
+Enhancement Phases 1–8 (trust freeze docs + publish hygiene) shipped through
+`1.0.0-dev.22`. `1.0.0` still requires owner approval after remote CI proof.
 
 ---
 

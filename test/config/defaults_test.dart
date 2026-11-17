@@ -11,7 +11,9 @@ void main() {
       expect(config.project.architecture, Architecture.clean);
       expect(config.flutter.stateManagement, StateManagement.bloc);
       expect(config.flutter.routing, Routing.goRouter);
-      expect(config.chico.ui.enabled, isTrue);
+      expect(config.chico.ui.enabled, isFalse);
+      expect(config.chico.kit.enabled, isFalse);
+      expect(config.chico.services.enabled, isFalse);
       expect(config.chico.ui.version, DefaultChicoVersions.ui);
       expect(config.chico.kit.version, DefaultChicoVersions.kit);
       expect(config.chico.services.version, DefaultChicoVersions.services);

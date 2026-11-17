@@ -22,14 +22,24 @@ Typical exit codes:
 
 ## `create`
 
-Create a Flutter application with DevKit overlays and optional Chico stack.
+Create a Flutter application with DevKit overlays. Material by default;
+pass `--chico` (or `--chico-ui` / `--chico-kit` / `--chico-services`) to opt in.
 
 ```bash
 devkit create shop_app --architecture clean --state bloc --no-interactive
+devkit create shop_app --chico --no-interactive
+devkit create shop_app --di riverpod --locales en,fr --no-interactive
 devkit create shop_app --output ../apps/shop_app --org com.acme --no-example-feature
 ```
 
-See [CREATE_APP.md](CREATE_APP.md) for every flag.
+Notable flags (full table in [CREATE_APP.md](CREATE_APP.md)):
+
+| Flag | Notes |
+|------|--------|
+| `--chico` | Opt in to ui + kit + services |
+| `--di` | `get_it` (default), `riverpod`, `manual` |
+| `--localization` / `--locales` | gen-l10n ARB setup (default on / `en`) |
+| `--routing` | `go_router` (default) or `navigator` |
 
 ---
 

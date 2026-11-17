@@ -14,6 +14,7 @@ final class ProjectCreateOptions {
     required this.enableChicoKit,
     required this.enableChicoServices,
     required this.enableLocalization,
+    this.languages = const ['en'],
     required this.enableDarkMode,
     required this.enableLogging,
     required this.enableErrorHandling,
@@ -32,6 +33,9 @@ final class ProjectCreateOptions {
   final bool enableChicoKit;
   final bool enableChicoServices;
   final bool enableLocalization;
+
+  /// BCP-47 language tags for gen-l10n ARB files (template prefers `en`).
+  final List<String> languages;
   final bool enableDarkMode;
   final bool enableLogging;
   final bool enableErrorHandling;

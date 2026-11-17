@@ -6,8 +6,8 @@ on:
   pull_request:
 
 # Package constraint: sdk ^3.8.0 (see pubspec.yaml).
-# Unit job pins Dart 3.8.0 (minimum). E2E uses Flutter stable whose Dart
-# must be >= 3.8.0. No dependency caching — avoids stale pub results.
+# Unit job pins Dart 3.8.0 (minimum). Flutter jobs use stable.
+# No dependency caching — avoids stale pub results.
 # flutter_e2e is excluded from unit and run only in the dedicated job.
 
 jobs:
@@ -36,11 +36,66 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
-          # Current stable deprecates package:flutter/material.dart (info).
-          # Chico scaffolds avoid that import; E2E uses --fatal-infos.
           cache: false
       - run: flutter --version
       - run: dart --version
       - run: dart pub get
       - run: dart test -t flutter_e2e
         timeout-minutes: 25
+
+  # Phase 7 stability: create a Material app and produce a debug APK on each OS.
+  create_apk:
+    name: create + debug APK (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    needs: unit
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: false
+      - run: flutter --version
+      - run: dart pub get
+      - name: Create Material smoke app
+        run: |
+          dart run bin/devkit.dart create smoke_apk \
+            --no-interactive \
+            --no-example-feature \
+            --no-localization \
+            --output "$RUNNER_TEMP/smoke_apk"
+      - name: Build debug APK
+        working-directory: ${{ runner.temp }}/smoke_apk
+        run: flutter build apk --debug
+        timeout-minutes: 30
+
+  # Chico stack Android smoke (Ubuntu only — slower deps).
+  create_apk_chico:
+    name: create --chico + debug APK
+    runs-on: ubuntu-latest
+    needs: unit
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: false
+      - run: flutter --version
+      - run: dart pub get
+      - name: Create Chico smoke app
+        run: |
+          dart run bin/devkit.dart create smoke_chico \
+            --chico \
+            --no-interactive \
+            --no-example-feature \
+            --output "$RUNNER_TEMP/smoke_chico"
+      - name: Build debug APK
+        working-directory: ${{ runner.temp }}/smoke_chico
+        run: flutter build apk --debug
+        timeout-minutes: 35

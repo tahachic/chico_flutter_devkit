@@ -29,6 +29,15 @@ dart test -t flutter_e2e
 dart pub publish --dry-run
 ```
 
+CI (`.github/workflows/ci.yml`) should be green:
+
+- **unit** × Ubuntu / Windows / macOS
+- **flutter_e2e** (Ubuntu)
+- **create_apk** × 3 OS (Material create → debug APK)
+- **create_apk_chico** (Ubuntu, `--chico` → debug APK)
+
+Android floors: [ANDROID.md](ANDROID.md).
+
 Manual smoke:
 
 ```bash
@@ -39,6 +48,7 @@ devkit create demo_app --no-interactive
 cd demo_app
 devkit doctor
 devkit generate feature products --dry-run
+flutter build apk --debug   # optional local Android gate
 ```
 
 ## Publish
@@ -53,8 +63,26 @@ devkit generate feature products --dry-run
 6. `dart pub publish`
 7. Verify `dart pub global activate chico_flutter_devkit` and `devkit --version`
 
+## Trust freeze before `1.0.0` (Phase 8)
+
+Do **not** bump to `1.0.0` until all of the following are true:
+
+1. **Remote CI green** on the package commit: unit ×3 OS, `flutter_e2e`,
+   `create_apk` ×3, `create_apk_chico`
+2. **Manual smoke on ≥2 OS** (Windows + Linux or macOS): create → feature →
+   analyze → debug APK (or documented skip)
+3. **Clean publish dry-run** (no gitignored-but-tracked files; no crash dumps
+   in the archive)
+4. **pub.dev score card** reviewed for the latest prerelease (pana + dartdoc
+   not failed/aborted; wait out `[pending analysis]` if needed)
+5. **Publisher** verified on pub.dev (currently “unverified uploader”) when ready
+6. **Owner approval** to leave prerelease — tagging `v1.0.0` is manual only
+
+Prerelease ships continue as `1.0.0-dev.N` until that gate.
+
 ## Notes
 
 - Keep Chico package constraints configurable; do not invent Chico APIs
 - Prefer `1.0.0` only after Windows + macOS/Linux validation
 - This toolkit will not auto-publish or auto-tag
+- Do not auto-bump to `1.0.0`

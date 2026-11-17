@@ -40,28 +40,46 @@ abstract final class ChicoBootSnippets {
     required Routing routing,
     required String homeWidget,
     required String routerGetter,
+    bool enableLocalization = false,
   }) {
     final useChico =
         chico.ui.enabled || chico.kit.enabled || chico.services.enabled;
+    final l10n = enableLocalization
+        ? '''
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,'''
+        : '';
     if (!useChico) {
       if (routing == Routing.goRouter) {
-        return 'MaterialApp.router(routerConfig: $routerGetter)';
+        return '''MaterialApp.router(
+      theme: AppTheme.light,
+      darkTheme: AppTheme.dark,
+      themeMode: ThemeMode.system,$l10n
+      routerConfig: $routerGetter,
+    )''';
       }
-      return 'MaterialApp(home: $homeWidget)';
+      return '''MaterialApp(
+      theme: AppTheme.light,
+      darkTheme: AppTheme.dark,
+      themeMode: ThemeMode.system,$l10n
+      initialRoute: AppRouter.home,
+      routes: AppRouter.routes,
+    )''';
     }
 
     if (routing == Routing.goRouter) {
       return '''ChicoApp.router(
       theme: ChicoThemeData.light(tint: const Color(0xFF007AFF)),
-      darkTheme: ChicoThemeData.dark(tint: const Color(0xFF0A84FF)),
+      darkTheme: ChicoThemeData.dark(tint: const Color(0xFF0A84FF)),$l10n
       routerConfig: $routerGetter,
     )''';
     }
 
     return '''ChicoApp(
       theme: ChicoThemeData.light(tint: const Color(0xFF007AFF)),
-      darkTheme: ChicoThemeData.dark(tint: const Color(0xFF0A84FF)),
-      home: $homeWidget,
+      darkTheme: ChicoThemeData.dark(tint: const Color(0xFF0A84FF)),$l10n
+      initialRoute: AppRouter.home,
+      routes: AppRouter.routes,
     )''';
   }
 

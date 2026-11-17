@@ -74,9 +74,14 @@ final class ProjectFactory {
     final overlay = AppScaffold.build(options);
     final writeResult = await fs.applyWrites(overlay, force: true);
 
-    // Stack dependencies for routing / state / DI.
+    // Stack dependencies for routing / state / DI / l10n.
     final pubspec = PubspecEditor.forProject(projectPath);
     await _ensureStackDependencies(pubspec, options);
+    if (options.enableLocalization) {
+      await pubspec.ensureSdkDependency('flutter_localizations');
+      await pubspec.ensureDependency(packageName: 'intl', constraint: 'any');
+      await pubspec.ensureFlutterGenerate(enabled: true);
+    }
 
     final chicoPackages = <String>[];
     final selected = <ChicoPackageId>[
@@ -113,7 +118,11 @@ final class ProjectFactory {
             dependencyInjection: options.dependencyInjection,
             localization: LocalizationConfig(
               enabled: options.enableLocalization,
-              languages: const ['en'],
+              languages: options.enableLocalization
+                  ? (options.languages.isEmpty
+                        ? const ['en']
+                        : options.languages)
+                  : const ['en'],
             ),
           ),
           chico: ChicoIntegrationsConfig(
@@ -162,6 +171,9 @@ final class ProjectFactory {
 
     if (runPubGet) {
       await flutterCli.pubGet(projectPath);
+      if (options.enableLocalization) {
+        await flutterCli.genL10n(projectPath);
+      }
     }
 
     return ProjectCreateResult(
@@ -189,6 +201,13 @@ final class ProjectFactory {
         constraint: '^8.0.0',
       );
     }
+    if (options.dependencyInjection == DependencyInjection.riverpod ||
+        options.stateManagement == StateManagement.riverpod) {
+      await pubspec.ensureDependency(
+        packageName: 'flutter_riverpod',
+        constraint: '^2.6.1',
+      );
+    }
     switch (options.stateManagement) {
       case StateManagement.bloc:
       case StateManagement.cubit:
@@ -197,10 +216,7 @@ final class ProjectFactory {
           constraint: '^9.0.0',
         );
       case StateManagement.riverpod:
-        await pubspec.ensureDependency(
-          packageName: 'flutter_riverpod',
-          constraint: '^2.6.1',
-        );
+        break; // ensured above
       case StateManagement.provider:
         await pubspec.ensureDependency(
           packageName: 'provider',

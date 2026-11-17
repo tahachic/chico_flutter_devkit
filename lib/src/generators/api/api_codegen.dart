@@ -153,8 +153,13 @@ final class ${clientPascal}Exception implements Exception {
     required String clientPascal,
     required OpenApiAuthConfig auth,
   }) {
-    final buffer = StringBuffer(generatedBanner)
-      ..writeln()
+    final buffer = StringBuffer(generatedBanner)..writeln();
+    if (auth.type == OpenApiAuthType.basic) {
+      buffer
+        ..writeln("import 'dart:convert';")
+        ..writeln();
+    }
+    buffer
       ..writeln('/// Authentication configuration for [$clientPascal].')
       ..writeln('final class ${clientPascal}Auth {');
 
@@ -209,6 +214,26 @@ final class ${clientPascal}Exception implements Exception {
           buffer.writeln('    return const {};');
         }
         buffer.writeln('  }');
+      case OpenApiAuthType.basic:
+        buffer
+          ..writeln(
+            '  const ${clientPascal}Auth({this.username, this.password});',
+          )
+          ..writeln()
+          ..writeln('  final String? username;')
+          ..writeln('  final String? password;')
+          ..writeln()
+          ..writeln('  Map<String, String> headers() {')
+          ..writeln('    final user = username;')
+          ..writeln('    final pass = password ?? \'\';')
+          ..writeln('    if (user == null || user.isEmpty) return const {};')
+          ..writeln(
+            '    final token = base64Encode(utf8.encode(\'\$user:\$pass\'));',
+          )
+          ..writeln("    return {'Authorization': 'Basic \$token'};")
+          ..writeln('  }')
+          ..writeln()
+          ..writeln('  Map<String, String> queryParameters() => const {};');
     }
 
     buffer.writeln('}');
@@ -268,6 +293,11 @@ final class ${clientPascal}Exception implements Exception {
       ..writeln(_helpers(clientPascal))
       ..writeln('}');
 
+    // Multipart helper types live outside the client class.
+    buffer
+      ..writeln()
+      ..writeln(multipartHelpers());
+
     return buffer.toString();
   }
 
@@ -314,11 +344,24 @@ devkit generate api $clientSnake --spec path/to/openapi.yaml --force
         params.add('${parameter.dartType} ${parameter.name}');
       }
     }
-    if (op.requestBodyType != null) {
+    if (op.requestEncoding == OpenApiRequestEncoding.json &&
+        op.requestBodyType != null) {
       final bodyType = op.requestBodyType!;
       params.add(
         bodyType.endsWith('?') ? '$bodyType body' : 'required $bodyType body',
       );
+    }
+    if (op.requestEncoding == OpenApiRequestEncoding.multipart) {
+      for (final part in op.multipartParts) {
+        if (part.required) {
+          params.add('required ${part.dartType} ${part.name}');
+        } else {
+          params.add('${part.dartType} ${part.name}');
+        }
+        if (part.isFile) {
+          params.add('String? ${part.name}Filename');
+        }
+      }
     }
 
     final returnType = op.successResponseType ?? 'void';
@@ -390,20 +433,68 @@ devkit generate api $clientSnake --spec path/to/openapi.yaml --force
     }
     buffer.writeln('    };');
 
-    if (op.requestBodyType != null) {
+    if (op.requestEncoding == OpenApiRequestEncoding.json &&
+        op.requestBodyType != null) {
       buffer
         ..writeln("    headers['Content-Type'] = 'application/json';")
         ..writeln(
           '    final payload = ${_encodeBodyExpression(op.requestBodyType!)};',
+        )
+        ..writeln(
+          "    final response = await _send('${op.method.name.toUpperCase()}', path, "
+          'query: query, headers: headers, body: payload);',
+        );
+    } else if (op.requestEncoding == OpenApiRequestEncoding.multipart) {
+      buffer
+        ..writeln(
+          "    final boundary = '----DevKitBoundary\${DateTime.now().microsecondsSinceEpoch}';",
+        )
+        ..writeln(
+          "    headers['Content-Type'] = 'multipart/form-data; boundary=\$boundary';",
+        )
+        ..writeln('    final parts = <_MultipartPart>[');
+      for (final part in op.multipartParts) {
+        if (part.isFile) {
+          if (part.required) {
+            buffer.writeln(
+              "      _MultipartPart.file('${part.wireName}', ${part.name}, "
+              'filename: ${part.name}Filename ?? \'${part.wireName}\'),',
+            );
+          } else {
+            buffer.writeln(
+              '      if (${part.name} != null) '
+              "_MultipartPart.file('${part.wireName}', ${part.name}!, "
+              'filename: ${part.name}Filename ?? \'${part.wireName}\'),',
+            );
+          }
+        } else {
+          if (part.required) {
+            buffer.writeln(
+              "      _MultipartPart.field('${part.wireName}', "
+              '${part.name}.toString()),',
+            );
+          } else {
+            buffer.writeln(
+              '      if (${part.name} != null) '
+              "_MultipartPart.field('${part.wireName}', "
+              '${part.name}.toString()),',
+            );
+          }
+        }
+      }
+      buffer
+        ..writeln('    ];')
+        ..writeln('    final bodyBytes = _encodeMultipart(boundary, parts);')
+        ..writeln(
+          "    final response = await _send('${op.method.name.toUpperCase()}', path, "
+          'query: query, headers: headers, bodyBytes: bodyBytes);',
         );
     } else {
-      buffer.writeln('    const String? payload = null;');
+      buffer.writeln(
+        "    final response = await _send('${op.method.name.toUpperCase()}', path, "
+        'query: query, headers: headers);',
+      );
     }
-
-    buffer.writeln(
-      "    final response = await _send('${op.method.name.toUpperCase()}', path, "
-      'query: query, headers: headers, body: payload);',
-    );
     buffer.writeln(_decodeReturn(clientPascal, returnType));
     buffer.writeln('  }');
     return buffer.toString();
@@ -637,13 +728,16 @@ ${lines.join('\n')}
     Map<String, String> query = const {},
     Map<String, String> headers = const {},
     String? body,
+    List<int>? bodyBytes,
   }) async {
     final uri = Uri.parse('\$baseUrl\$path').replace(
       queryParameters: query.isEmpty ? null : query,
     );
     final request = await _httpClient.openUrl(method, uri);
     headers.forEach(request.headers.set);
-    if (body != null) {
+    if (bodyBytes != null) {
+      request.add(bodyBytes);
+    } else if (body != null) {
       request.add(utf8.encode(body));
     }
     final response = await request.close();
@@ -683,6 +777,48 @@ ${lines.join('\n')}
       );
     }
   }
+
+  List<int> _encodeMultipart(String boundary, List<_MultipartPart> parts) {
+    final bytes = <int>[];
+    void writeAscii(String value) => bytes.addAll(utf8.encode(value));
+    for (final part in parts) {
+      writeAscii('--\$boundary\\r\\n');
+      if (part.bytes != null) {
+        final filename = part.filename ?? part.name;
+        writeAscii(
+          'Content-Disposition: form-data; name="\${part.name}"; '
+          'filename="\$filename"\\r\\n',
+        );
+        writeAscii('Content-Type: application/octet-stream\\r\\n\\r\\n');
+        bytes.addAll(part.bytes!);
+        writeAscii('\\r\\n');
+      } else {
+        writeAscii(
+          'Content-Disposition: form-data; name="\${part.name}"\\r\\n\\r\\n',
+        );
+        writeAscii('\${part.value ?? ""}\\r\\n');
+      }
+    }
+    writeAscii('--\$boundary--\\r\\n');
+    return bytes;
+  }
 ''';
   }
+
+  /// Multipart helper types (outside the client class).
+  static String multipartHelpers() => '''
+final class _MultipartPart {
+  const _MultipartPart.field(this.name, this.value)
+      : bytes = null,
+        filename = null;
+
+  const _MultipartPart.file(this.name, this.bytes, {this.filename})
+      : value = null;
+
+  final String name;
+  final String? value;
+  final List<int>? bytes;
+  final String? filename;
+}
+''';
 }

@@ -88,6 +88,52 @@ void main() {
     );
   });
 
+  test('generates HTTP basic auth helper', () async {
+    final result = await runner.run(
+      projectRoot: tempRoot.path,
+      generatorName: 'api',
+      targetName: 'basic',
+      force: true,
+      extra: {
+        'spec': p.absolute(
+          p.join('test', 'fixtures', 'openapi', 'supported', 'http_basic.yaml'),
+        ),
+      },
+    );
+    expect(result.writes.createdCount, greaterThan(2));
+    final auth = File(
+      p.join(tempRoot.path, 'lib', 'api', 'basic', 'generated', 'auth.dart'),
+    ).readAsStringSync();
+    expect(auth, contains('username'));
+    expect(auth, contains('password'));
+    expect(auth, contains('Basic \$token'));
+    expect(auth, contains("import 'dart:convert';"));
+  });
+
+  test('generates multipart upload client method', () async {
+    final result = await runner.run(
+      projectRoot: tempRoot.path,
+      generatorName: 'api',
+      targetName: 'upload',
+      force: true,
+      extra: {
+        'spec': p.absolute(
+          p.join('test', 'fixtures', 'openapi', 'supported', 'multipart.yaml'),
+        ),
+      },
+    );
+    expect(result.writes.createdCount, greaterThan(2));
+    final client = File(
+      p.join(tempRoot.path, 'lib', 'api', 'upload', 'generated', 'client.dart'),
+    ).readAsStringSync();
+    expect(client, contains('uploadAsset'));
+    expect(client, contains('required List<int> file'));
+    expect(client, contains('String? fileFilename'));
+    expect(client, contains('multipart/form-data'));
+    expect(client, contains('_encodeMultipart'));
+    expect(client, contains('final class _MultipartPart'));
+  });
+
   test('requires --spec', () async {
     expect(
       () => runner.run(

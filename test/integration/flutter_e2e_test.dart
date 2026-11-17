@@ -51,11 +51,9 @@ void main() {
       );
       expect(create.exitCode, 0, reason: '${create.stdout}\n${create.stderr}');
 
-      // Project creation + Chico deps (content, not only exit code).
+      // Material-first create (Chico opt-in via --chico / setup).
       final pubspec = File(p.join(project, 'pubspec.yaml')).readAsStringSync();
-      expect(pubspec, contains('chico_ui'));
-      expect(pubspec, contains('chico_kit'));
-      expect(pubspec, contains('chico_services'));
+      expect(pubspec, isNot(contains('chico_ui')));
       expect(pubspec, contains('flutter_bloc'));
       expect(pubspec, contains('go_router'));
       expect(
@@ -63,6 +61,11 @@ void main() {
         isTrue,
       );
       expect(File(p.join(project, 'lib', 'main.dart')).existsSync(), isTrue);
+      final appSource = File(
+        p.join(project, 'lib', 'app.dart'),
+      ).readAsStringSync();
+      expect(appSource, contains('MaterialApp'));
+      expect(appSource, isNot(contains('ChicoApp')));
 
       Future<ProcessResult> devkit(List<String> args) {
         return Process.run(
@@ -86,8 +89,8 @@ void main() {
       );
       expect(
         feature.stdout.toString(),
-        contains('scaffold'),
-        reason: 'Feature summary should admit scaffolding',
+        contains('in-memory'),
+        reason: 'Feature summary should mention seeded in-memory data',
       );
       final entity = File(
         p.join(

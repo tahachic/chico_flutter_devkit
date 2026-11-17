@@ -15,12 +15,12 @@ devkit doctor
 
 Full guides (also linked from the package README on pub.dev):
 
-- [Getting started](../doc/GETTING_STARTED.md)
-- [Cookbook](../doc/COOKBOOK.md)
-- [Generator guide](../doc/GENERATOR_GUIDE.md)
-- [Command reference](../doc/COMMAND_REFERENCE.md)
-- [Create an app](../doc/CREATE_APP.md)
-- [Troubleshooting](../doc/TROUBLESHOOTING.md)
+- [Getting started](https://github.com/tahachic/chico_flutter_devkit/blob/main/doc/GETTING_STARTED.md)
+- [Cookbook](https://github.com/tahachic/chico_flutter_devkit/blob/main/doc/COOKBOOK.md)
+- [Generator guide](https://github.com/tahachic/chico_flutter_devkit/blob/main/doc/GENERATOR_GUIDE.md)
+- [Command reference](https://github.com/tahachic/chico_flutter_devkit/blob/main/doc/COMMAND_REFERENCE.md)
+- [Create an app](https://github.com/tahachic/chico_flutter_devkit/blob/main/doc/CREATE_APP.md)
+- [Troubleshooting](https://github.com/tahachic/chico_flutter_devkit/blob/main/doc/TROUBLESHOOTING.md)
 
 ## Runnable library sample
 

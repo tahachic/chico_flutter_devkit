@@ -19,7 +19,7 @@ void main() {
     await writeFlutterPubspec(tempRoot.path, chicoUi: true, chicoKit: true);
     await configService.initProjectConfig(
       projectRoot: tempRoot.path,
-      config: DevKitConfigDefaults.create(projectName: 'shop_app'),
+      config: chicoEnabledConfig(projectName: 'shop_app'),
     );
     runner = GeneratorRunner(
       registry: GeneratorRegistry(generators: [WidgetGenerator()]),
