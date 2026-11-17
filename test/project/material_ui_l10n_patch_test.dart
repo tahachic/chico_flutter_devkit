@@ -64,15 +64,17 @@ class _AppLocalizationsDelegate
       expect(changed, isTrue);
       final out = await file.readAsString();
       expect(out, contains("import 'package:material_ui/material_ui.dart';"));
-      expect(
-        out,
-        contains(
-          "import 'package:flutter_localizations/flutter_localizations.dart' "
-          'show GlobalWidgetsLocalizations;',
-        ),
-      );
       expect(out, contains('...GlobalMaterialLocalizations.delegates'));
       expect(out, isNot(contains('GlobalCupertinoLocalizations.delegate,')));
+      expect(out, isNot(contains("import 'package:flutter/widgets.dart';")));
+      expect(
+        out,
+        isNot(
+          contains(
+            "import 'package:flutter_localizations/flutter_localizations.dart'",
+          ),
+        ),
+      );
     },
   );
 }

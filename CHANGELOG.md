@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.0.0-dev.27
+
+### Fixed
+
+- gen-l10n Material UI patch also drops unused `flutter/widgets` and
+  `flutter_localizations` imports (CI `analyze --fatal-infos`)
+
 ## 1.0.0-dev.26
 
 ### Fixed

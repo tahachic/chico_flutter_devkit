@@ -23,16 +23,6 @@ abstract final class MaterialUiL10nPatch {
       );
     }
 
-    // Avoid ambiguous GlobalMaterialLocalizations from flutter_localizations.
-    source = source.replaceAllMapped(
-      RegExp(
-        r"import 'package:flutter_localizations/flutter_localizations\.dart';",
-      ),
-      (_) =>
-          "import 'package:flutter_localizations/flutter_localizations.dart' "
-          'show GlobalWidgetsLocalizations;',
-    );
-
     // Replace the classic three Global* delegates with material_ui's combined
     // list (keeps the app's own AppLocalizations delegate entry).
     final classicDelegates = RegExp(
@@ -47,6 +37,7 @@ abstract final class MaterialUiL10nPatch {
       dotAll: true,
     );
 
+    var rewroteDelegates = false;
     if (classicDelegates.hasMatch(source)) {
       source = source.replaceFirstMapped(classicDelegates, (match) {
         final headEntries = (match.group(2) ?? '').trimRight();
@@ -56,14 +47,12 @@ abstract final class MaterialUiL10nPatch {
             '    ...GlobalMaterialLocalizations.delegates,\n'
             '  ];';
       });
-    } else {
-      // Fallback: swap individual deprecated delegates if the block shape differs.
+      rewroteDelegates = true;
+    } else if (source.contains('GlobalMaterialLocalizations.delegate')) {
       source = source.replaceAll(
         'GlobalMaterialLocalizations.delegate',
         '...GlobalMaterialLocalizations.delegates /* material_ui */',
       );
-      // If we expanded Material to a spread, drop redundant Cupertino/Widgets
-      // lines that material_ui's combined list already includes.
       source = source.replaceAll(
         RegExp(
           r'^\s*GlobalCupertinoLocalizations\.delegate,\s*$',
@@ -74,6 +63,28 @@ abstract final class MaterialUiL10nPatch {
       source = source.replaceAll(
         RegExp(
           r'^\s*GlobalWidgetsLocalizations\.delegate,\s*$',
+          multiLine: true,
+        ),
+        '',
+      );
+      rewroteDelegates = true;
+    }
+
+    if (rewroteDelegates ||
+        source.contains('...GlobalMaterialLocalizations.delegates')) {
+      // material_ui re-exports widgets; flutter_localizations is unused once
+      // GlobalMaterialLocalizations.delegates covers Material/Cupertino/Widgets.
+      source = source.replaceAll(
+        RegExp(
+          r"^import 'package:flutter/widgets\.dart';\s*\n",
+          multiLine: true,
+        ),
+        '',
+      );
+      source = source.replaceAll(
+        RegExp(
+          r"^import 'package:flutter_localizations/flutter_localizations\.dart'"
+          r"(?: show [^;]+)?;\s*\n",
           multiLine: true,
         ),
         '',
