@@ -397,13 +397,26 @@ $factoriesEnd
 
     if (routing == Routing.goRouter &&
         !source.contains("import 'package:go_router/go_router.dart';")) {
-      final flutterImport = RegExp(r"import 'package:flutter/[^']+\.dart';");
-      final match = flutterImport.firstMatch(source);
+      // Anchor after Material/Chico/Flutter UI imports (incl. material_ui).
+      final anchor = RegExp(
+        r"import 'package:(?:flutter/|material_ui/|cupertino_ui/|chico_[^']+/)"
+        r"[^']+\.dart';",
+      );
+      final match = anchor.firstMatch(source);
       if (match != null) {
         source = source.replaceFirst(
           match.group(0)!,
-          "${match.group(0)!}\nimport 'package:go_router/go_router.dart';",
+          '${match.group(0)!}\nimport \'package:go_router/go_router.dart\';',
         );
+      } else {
+        final firstImport = RegExp(r'^import .*;\s*$', multiLine: true);
+        final first = firstImport.firstMatch(source);
+        if (first != null) {
+          source = source.replaceFirst(
+            first.group(0)!,
+            '${first.group(0)!}\nimport \'package:go_router/go_router.dart\';',
+          );
+        }
       }
     }
 

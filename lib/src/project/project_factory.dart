@@ -15,6 +15,7 @@ import '../integrations/chico/chico_integration_service.dart';
 import '../integrations/chico/chico_packages.dart';
 import '../pubspec/pubspec_editor.dart';
 import 'flutter_cli.dart';
+import 'material_ui_l10n_patch.dart';
 import 'project_options.dart';
 import 'starters/app_scaffold.dart';
 
@@ -216,6 +217,11 @@ final class ProjectFactory {
       if (effective.useMaterialUi && materialApp) {
         // Migrates scaffold + gen-l10n output off deprecated flutter/material.
         await flutterCli.migrateDesignWidgets(projectPath);
+        if (effective.enableLocalization) {
+          // gen-l10n still emits GlobalMaterial/Cupertino from
+          // flutter_localizations; rewrite to material_ui delegates.
+          await MaterialUiL10nPatch.apply(projectPath);
+        }
       }
     }
 

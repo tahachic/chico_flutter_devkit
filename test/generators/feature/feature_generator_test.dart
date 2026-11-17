@@ -274,6 +274,81 @@ class HomePage extends StatelessWidget {
     );
   });
 
+  test('go_router home link adds import when home uses material_ui', () async {
+    final base = DevKitConfigDefaults.create(projectName: 'shop_app');
+    final runner = await buildRunner(base);
+
+    await Directory(
+      p.join(tempRoot.path, 'lib', 'core', 'routing'),
+    ).create(recursive: true);
+    await File(
+      p.join(tempRoot.path, 'lib', 'core', 'routing', 'feature_routes.dart'),
+    ).writeAsString('''
+import 'package:go_router/go_router.dart';
+// <devkit:feature-route-imports>
+// </devkit:feature-route-imports>
+List<RouteBase> get featureRoutes => [
+  // <devkit:feature-routes>
+  // </devkit:feature-routes>
+];
+''');
+    await Directory(
+      p.join(tempRoot.path, 'lib', 'features', 'home', 'presentation', 'pages'),
+    ).create(recursive: true);
+    await File(
+      p.join(
+        tempRoot.path,
+        'lib',
+        'features',
+        'home',
+        'presentation',
+        'pages',
+        'home_page.dart',
+      ),
+    ).writeAsString('''
+import 'package:material_ui/material_ui.dart';
+class HomePage extends StatelessWidget {
+  const HomePage({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(body: Text('Welcome'));
+    // <devkit:home-features>
+    // </devkit:home-features>
+  }
+}
+''');
+    // Mark project as material_ui so generators prefer that import path.
+    await File(p.join(tempRoot.path, 'pubspec.yaml')).writeAsString('''
+name: shop_app
+dependencies:
+  flutter:
+    sdk: flutter
+  material_ui: ^1.0.0
+  go_router: ^14.0.0
+''');
+
+    await runner.run(
+      projectRoot: tempRoot.path,
+      generatorName: 'feature',
+      targetName: 'products',
+      extra: {'tests': false, 'remote': true},
+    );
+
+    final home = File(
+      p.join(
+        tempRoot.path,
+        'lib',
+        'features',
+        'home',
+        'presentation',
+        'pages',
+        'home_page.dart',
+      ),
+    ).readAsStringSync();
+    expect(home, contains("import 'package:go_router/go_router.dart';"));
+    expect(home, contains("context.go('/features/products')"));
+  });
+
   test(
     'navigator routing registers named route and pushNamed home link',
     () async {

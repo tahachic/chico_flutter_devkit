@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.0.0-dev.26
+
+### Fixed
+
+- Feature Home link adds `go_router` import when the page uses `material_ui`
+  (fixes `context.go` undefined on Flutter 3.50 e2e)
+- Patch gen-l10n `GlobalMaterial`/`GlobalCupertino` delegates onto `material_ui`
+  after create so analyze `--fatal-infos` stays clean
+
 ## 1.0.0-dev.25
 
 ### Fixed
