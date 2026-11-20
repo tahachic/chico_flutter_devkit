@@ -43,6 +43,7 @@ void main() {
       'doc/RELEASE.md',
       'doc/TEMPLATE_DEVELOPMENT.md',
       'doc/ANDROID.md',
+      'doc/MANUAL_RELEASE_TEST.md',
     ];
 
     final offenders = <String>[];

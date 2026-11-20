@@ -108,6 +108,7 @@ End-to-end recipes: [Cookbook](https://github.com/tahachic/chico_flutter_devkit/
 | [Architecture](https://github.com/tahachic/chico_flutter_devkit/blob/main/doc/ARCHITECTURE.md) | Contributors | How the CLI is structured |
 | [Template development](https://github.com/tahachic/chico_flutter_devkit/blob/main/doc/TEMPLATE_DEVELOPMENT.md) | Contributors | Template engine notes |
 | [Release checklist](https://github.com/tahachic/chico_flutter_devkit/blob/main/doc/RELEASE.md) | Maintainers | Publish gates |
+| [Manual release test](https://github.com/tahachic/chico_flutter_devkit/blob/main/doc/MANUAL_RELEASE_TEST.md) | Maintainers | Ecommerce shop QA before a stable ship |
 | [Example](https://github.com/tahachic/chico_flutter_devkit/blob/main/example/README.md) | pub.dev / library | Runnable public-API sample |
 | [Changelog](https://github.com/tahachic/chico_flutter_devkit/blob/main/CHANGELOG.md) | Everyone | Version history |
 

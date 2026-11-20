@@ -38,7 +38,7 @@ CI (`.github/workflows/ci.yml`) should be green:
 
 Android floors: [ANDROID.md](ANDROID.md).
 
-Manual smoke:
+Manual smoke (quick):
 
 ```bash
 dart pub global activate --source path .
@@ -50,6 +50,8 @@ devkit doctor
 devkit generate feature products --dry-run
 flutter build apk --debug   # optional local Android gate
 ```
+
+**Full pre-`1.0.0` ecommerce walkthrough:** [MANUAL_RELEASE_TEST.md](MANUAL_RELEASE_TEST.md).
 
 ## Publish
 

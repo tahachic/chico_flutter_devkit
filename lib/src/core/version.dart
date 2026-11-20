@@ -1,7 +1,7 @@
 /// Package version for CLI `--version` and banners.
 ///
 /// Keep in sync with `pubspec.yaml`.
-const String packageVersion = '1.0.0-dev.27';
+const String packageVersion = '1.0.0';
 
 /// Human-readable product name.
 const String productName = 'Chico Flutter DevKit';

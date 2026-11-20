@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.0.0
+
+### Added
+
+- First stable release of `chico_flutter_devkit` (`devkit` CLI)
+- Manual ecommerce release walkthrough: [doc/MANUAL_RELEASE_TEST.md](doc/MANUAL_RELEASE_TEST.md)
+
+### Notes
+
+- Material-first create on Flutter ≥ 3.47 uses `material_ui` / `cupertino_ui`
+  with gen-l10n delegate patching for analyze `--fatal-infos` on current stable
+- OpenAPI generate remains fail-closed for unsupported constructs
+- Feature scaffolds ship with demo in-memory datasources (wire your API client
+  when ready)
+- Prerelease history: `1.0.0-dev.1` … `1.0.0-dev.27`
+
 ## 1.0.0-dev.27
 
 ### Fixed
