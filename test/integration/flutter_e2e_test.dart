@@ -289,6 +289,125 @@ void main() {
     skip: flutter ? false : 'Flutter SDK not available on PATH',
     timeout: const Timeout(Duration(minutes: 12)),
   );
+
+  test(
+    'generate api + feature --from-api + auth analyze clean',
+    () async {
+      final root = await Directory.systemTemp.createTemp('devkit_e2e_api_');
+      addTearDown(() async {
+        if (root.existsSync()) await root.delete(recursive: true);
+      });
+
+      final pkg = Directory.current.path;
+      final project = p.join(root.path, 'api_app');
+      final create = await Process.run(
+        'dart',
+        [
+          'run',
+          p.join(pkg, 'bin', 'devkit.dart'),
+          'create',
+          'api_app',
+          '--no-interactive',
+          '--architecture',
+          'clean',
+          '--state',
+          'bloc',
+          '--no-example-feature',
+          '--output',
+          project,
+        ],
+        workingDirectory: pkg,
+        runInShell: true,
+      );
+      expect(create.exitCode, 0, reason: '${create.stdout}\n${create.stderr}');
+
+      Future<ProcessResult> devkit(List<String> args) {
+        return Process.run(
+          'dart',
+          ['run', p.join(pkg, 'bin', 'devkit.dart'), ...args],
+          workingDirectory: project,
+          runInShell: true,
+        );
+      }
+
+      final specSrc = p.join(
+        pkg,
+        'test',
+        'fixtures',
+        'openapi',
+        'shop_api.yaml',
+      );
+      final specDir = Directory(p.join(project, 'openapi'));
+      await specDir.create(recursive: true);
+      await File(specSrc).copy(p.join(specDir.path, 'shop_api.yaml'));
+
+      final api = await devkit([
+        'generate',
+        'api',
+        'shop',
+        '--spec',
+        'openapi/shop_api.yaml',
+      ]);
+      expect(api.exitCode, 0, reason: '${api.stdout}\n${api.stderr}');
+
+      final feature = await devkit([
+        'generate',
+        'feature',
+        'products',
+        '--from-api',
+        'shop',
+        '--pagination',
+        '--search',
+        '--no-tests',
+      ]);
+      expect(
+        feature.exitCode,
+        0,
+        reason: '${feature.stdout}\n${feature.stderr}',
+      );
+      expect(feature.stdout.toString(), contains('ShopApi'));
+      final remote = File(
+        p.join(
+          project,
+          'lib',
+          'features',
+          'products',
+          'data',
+          'datasources',
+          'products_remote_datasource.dart',
+        ),
+      ).readAsStringSync();
+      expect(remote, contains('listProducts'));
+      expect(remote, isNot(contains('demo in-memory')));
+
+      final auth = await devkit(['generate', 'auth', 'session']);
+      expect(auth.exitCode, 0, reason: '${auth.stdout}\n${auth.stderr}');
+
+      final missing = await devkit([
+        'generate',
+        'feature',
+        'orders',
+        '--from-api',
+        'nope',
+        '--no-tests',
+      ]);
+      expect(missing.exitCode, isNot(0));
+
+      final analyze = await Process.run(
+        'flutter',
+        ['analyze', '--fatal-infos'],
+        workingDirectory: project,
+        runInShell: true,
+      );
+      expect(
+        analyze.exitCode,
+        0,
+        reason: '${analyze.stdout}\n${analyze.stderr}',
+      );
+    },
+    skip: flutter ? false : 'Flutter SDK not available on PATH',
+    timeout: const Timeout(Duration(minutes: 12)),
+  );
 }
 
 bool _flutterAvailable() {

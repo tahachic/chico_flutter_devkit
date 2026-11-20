@@ -8,6 +8,7 @@ import '../shared/chico_dependency_guard.dart';
 import '../shared/code_builders.dart';
 import '../shared/field_spec.dart';
 import '../shared/ui_imports.dart';
+import 'api_feature_wire.dart';
 import 'feature_integration.dart';
 import 'feature_layout.dart';
 
@@ -28,6 +29,25 @@ final class FeatureGenerator extends BaseGenerator {
       throw const InvalidUsageException(
         'Feature requires at least one datasource.',
         details: 'Keep remote enabled (default) and/or pass --local.',
+      );
+    }
+    final fromApi = (context.extra['fromApi'] as String?)?.trim();
+    if (fromApi != null && fromApi.isNotEmpty) {
+      if (!includeRemote) {
+        throw const InvalidUsageException(
+          '--from-api requires a remote datasource.',
+          details: 'Omit --no-remote when wiring an API client.',
+        );
+      }
+      // Fail closed before any writes (result discarded; generate re-resolves).
+      ApiFeatureWire.resolve(
+        projectRoot: context.projectRoot,
+        apiName: fromApi,
+        featureSnake: context.targetName.snakeCase,
+        featureFields: _fields(context),
+        needCrud: context.extra['crud'] == true,
+        needPagination: context.extra['pagination'] == true,
+        needSearch: context.extra['search'] == true,
       );
     }
     await ChicoDependencyGuard.ensure(context: context);
@@ -54,6 +74,18 @@ final class FeatureGenerator extends BaseGenerator {
     final useMaterialUi = await UiImports.projectUsesMaterialUi(
       context.projectRoot,
     );
+    final fromApi = (context.extra['fromApi'] as String?)?.trim();
+    final apiWire = (fromApi != null && fromApi.isNotEmpty)
+        ? ApiFeatureWire.resolve(
+            projectRoot: context.projectRoot,
+            apiName: fromApi,
+            featureSnake: layout.snake,
+            featureFields: fields,
+            needCrud: includeCrud,
+            needPagination: includePagination,
+            needSearch: includeSearch,
+          )
+        : null;
 
     final writes = <PlannedFileWrite>[
       PlannedFileWrite(
@@ -81,14 +113,24 @@ final class FeatureGenerator extends BaseGenerator {
       if (includeRemote)
         PlannedFileWrite(
           relativePath: layout.remoteDatasource,
-          content: _remoteDatasource(
-            layout,
-            project: project,
-            fields: fields,
-            includeCrud: includeCrud,
-            includePagination: includePagination,
-            includeSearch: includeSearch,
-          ),
+          content: apiWire == null
+              ? _remoteDatasource(
+                  layout,
+                  project: project,
+                  fields: fields,
+                  includeCrud: includeCrud,
+                  includePagination: includePagination,
+                  includeSearch: includeSearch,
+                )
+              : _remoteDatasourceFromApi(
+                  layout,
+                  project: project,
+                  fields: fields,
+                  wire: apiWire,
+                  includeCrud: includeCrud,
+                  includePagination: includePagination,
+                  includeSearch: includeSearch,
+                ),
         ),
       if (includeLocal)
         PlannedFileWrite(
@@ -113,6 +155,7 @@ final class FeatureGenerator extends BaseGenerator {
         project: project,
         includeRemote: includeRemote,
         includeLocal: includeLocal,
+        apiWire: apiWire,
       ),
       PlannedFileWrite(
         relativePath: layout.page,
@@ -129,6 +172,7 @@ final class FeatureGenerator extends BaseGenerator {
           includeSearch: includeSearch,
           includeFilters: includeFilters,
           includePagination: includePagination,
+          apiWire: apiWire,
         ),
       ),
       PlannedFileWrite(
@@ -149,6 +193,7 @@ final class FeatureGenerator extends BaseGenerator {
         includeRemote: includeRemote,
         includeLocal: includeLocal,
         useMaterialUi: useMaterialUi,
+        apiWire: apiWire,
       ),
     );
 
@@ -175,17 +220,24 @@ final class FeatureGenerator extends BaseGenerator {
         .where((write) => write.relativePath.startsWith('test/'))
         .length;
 
+    final dataNote = apiWire == null
+        ? 'demo in-memory data'
+        : 'API client ${apiWire.clientPascal} (${apiWire.listMethod.name})';
+    final nextHint = apiWire == null
+        ? 'Swap the datasource for a real API when you are ready.'
+        : 'Remote datasource calls ${apiWire.clientPascal}; ensure the API base URL is reachable.';
+
     return commitWrites(
       context: context,
       writes: writes,
       message:
-          'Feature ${layout.pascal} generated with demo in-memory data '
+          'Feature ${layout.pascal} generated with $dataNote '
           '(${architecture.yamlValue}/${state.yamlValue}'
           '${flags.isEmpty ? '' : '; $flags'}).\n'
           'Files planned: ${writes.length}\n'
           'Tests generated: $testCount\n'
-          'Open /features/${layout.snake} from Home (seeded list).\n'
-          'Swap the datasource for a real API when you are ready.',
+          'Open /features/${layout.snake} from Home.\n'
+          '$nextHint',
     );
   }
 
@@ -405,6 +457,133 @@ ${methods.join('\n')}
 ''';
   }
 
+  String _remoteDatasourceFromApi(
+    FeatureLayout layout, {
+    required String project,
+    required List<FieldSpec> fields,
+    required ApiFeatureWirePlan wire,
+    required bool includeCrud,
+    required bool includePagination,
+    required bool includeSearch,
+  }) {
+    final mapArgs = wire.mapFromDtoExpression();
+    final fetchAll =
+        '''
+  Future<List<${layout.pascal}Model>> fetchAll() async {
+    final dtos = await api.${wire.listMethod.name}();
+    return dtos.map(_mapDto).toList(growable: false);
+  }''';
+
+    final fetchPage = includePagination
+        ? wire.listHasPage
+              ? '''
+  Future<List<${layout.pascal}Model>> fetchPage({
+    required int page,
+    int pageSize = 20,
+  }) async {
+    final dtos = await api.${wire.listMethod.name}(page: page);
+    return dtos.map(_mapDto).toList(growable: false);
+  }'''
+              : '''
+  Future<List<${layout.pascal}Model>> fetchPage({
+    required int page,
+    int pageSize = 20,
+  }) async {
+    // API list has no page param — slice locally after fetchAll.
+    final all = await fetchAll();
+    final start = (page < 1 ? 0 : page - 1) * pageSize;
+    if (start >= all.length) {
+      return const <${layout.pascal}Model>[];
+    }
+    final end = (start + pageSize).clamp(0, all.length);
+    return all.sublist(start, end);
+  }'''
+        : '';
+
+    final search = includeSearch
+        ? wire.listHasQuery
+              ? '''
+  Future<List<${layout.pascal}Model>> search(String query) async {
+    final q = query.trim();
+    if (q.isEmpty) return fetchAll();
+    final dtos = await api.${wire.listMethod.name}(q: q);
+    return dtos.map(_mapDto).toList(growable: false);
+  }'''
+              : '''
+  Future<List<${layout.pascal}Model>> search(String query) async {
+    final q = query.trim().toLowerCase();
+    if (q.isEmpty) return fetchAll();
+    final all = await fetchAll();
+    return all
+        .where((item) => item.toString().toLowerCase().contains(q))
+        .toList(growable: false);
+  }'''
+        : '';
+
+    final crud = <String>[];
+    if (includeCrud &&
+        wire.createMethod != null &&
+        wire.updateMethod != null &&
+        wire.deleteMethod != null &&
+        wire.inputType != null) {
+      final inputArgs = wire.mapToInputExpression('item');
+      final idParam = wire.idPathParam ?? 'id';
+      crud.addAll([
+        '''
+  Future<${layout.pascal}Model> create(${layout.pascal}Model item) async {
+    final body = ${wire.inputType}(
+      $inputArgs
+    );
+    final dto = await api.${wire.createMethod!.name}(body: body);
+    return _mapDto(dto);
+  }''',
+        '''
+  Future<${layout.pascal}Model> update(${layout.pascal}Model item) async {
+    final body = ${wire.inputType}(
+      $inputArgs
+    );
+    final dto = await api.${wire.updateMethod!.name}(
+      $idParam: item.id,
+      body: body,
+    );
+    return _mapDto(dto);
+  }''',
+        '''
+  Future<void> delete(String id) async {
+    await api.${wire.deleteMethod!.name}($idParam: id);
+  }''',
+      ]);
+    }
+
+    final methods = [
+      fetchAll,
+      if (fetchPage.isNotEmpty) fetchPage,
+      if (search.isNotEmpty) search,
+      ...crud,
+    ];
+
+    return '''
+${layout.packageImport(project, layout.model)}
+${wire.clientImport}
+${wire.modelsImport}
+
+/// Generated by Chico Flutter DevKit — remote datasource (API: ${wire.clientPascal}).
+class ${layout.pascal}RemoteDataSource {
+  ${layout.pascal}RemoteDataSource({required this.api});
+
+  final ${wire.clientPascal} api;
+
+${methods.join('\n')}
+
+  ${layout.pascal}Model _mapDto(${wire.itemType} dto) {
+    return ${layout.pascal}Model(
+      $mapArgs
+    );
+  }
+}
+''';
+  }
+
   String _localDatasource(
     FeatureLayout layout, {
     required String project,
@@ -538,6 +717,7 @@ $extras}
     required String project,
     required bool includeRemote,
     required bool includeLocal,
+    ApiFeatureWirePlan? apiWire,
   }) {
     final dir = layout.stateDir(state);
     switch (state) {
@@ -692,17 +872,29 @@ class ${layout.pascal}Cubit extends Cubit<${layout.pascal}State> {
         ];
       case StateManagement.riverpod:
         final dsImports = [
+          if (apiWire != null) apiWire.clientImport,
           if (includeRemote)
             layout.packageImport(project, layout.remoteDatasource),
           if (includeLocal)
             layout.packageImport(project, layout.localDatasource),
         ].join('\n');
+        final remoteCtor = apiWire == null
+            ? '${layout.pascal}RemoteDataSource()'
+            : '${layout.pascal}RemoteDataSource(api: ref.watch(${apiWire.apiSnake}ApiProvider))';
+        final apiProvider = apiWire == null
+            ? ''
+            : '''
+final ${apiWire.apiSnake}ApiProvider = Provider<${apiWire.clientPascal}>(
+  (ref) => ${apiWire.clientPascal}(),
+);
+''';
         final dsProviders = [
+          if (apiWire != null) apiProvider,
           if (includeRemote)
             '''
 final ${layout.snake}RemoteDataSourceProvider =
     Provider<${layout.pascal}RemoteDataSource>(
-  (ref) => ${layout.pascal}RemoteDataSource(),
+  (ref) => $remoteCtor,
 );''',
           if (includeLocal)
             '''
@@ -812,7 +1004,11 @@ class ${layout.pascal}Provider extends ChangeNotifier {
     required bool includeRemote,
     required bool includeLocal,
     required DependencyInjection di,
+    ApiFeatureWirePlan? apiWire,
   }) {
+    final remoteExpr = apiWire == null
+        ? '${layout.pascal}RemoteDataSource()'
+        : '${layout.pascal}RemoteDataSource(api: ${apiWire.clientPascal}())';
     return switch (di) {
       DependencyInjection.getIt =>
         '    final getList = getIt<Get${layout.pascal}List>();',
@@ -820,7 +1016,7 @@ class ${layout.pascal}Provider extends ChangeNotifier {
         '    final getList = FeatureFactories.${layout.camel}List();',
       DependencyInjection.riverpod =>
         '''
-    final repository = ${layout.pascal}RepositoryImpl(${[if (includeRemote) 'remote: ${layout.pascal}RemoteDataSource()', if (includeLocal) 'local: ${layout.pascal}LocalDataSource()'].join(', ')});
+    final repository = ${layout.pascal}RepositoryImpl(${[if (includeRemote) 'remote: $remoteExpr', if (includeLocal) 'local: ${layout.pascal}LocalDataSource()'].join(', ')});
     final getList = Get${layout.pascal}List(repository);''',
     };
   }
@@ -832,6 +1028,7 @@ class ${layout.pascal}Provider extends ChangeNotifier {
     required bool includeRemote,
     required bool includeLocal,
     required String tileImport,
+    ApiFeatureWirePlan? apiWire,
   }) {
     return switch (di) {
       DependencyInjection.getIt => [
@@ -847,6 +1044,7 @@ class ${layout.pascal}Provider extends ChangeNotifier {
       DependencyInjection.riverpod => [
         layout.packageImport(project, layout.getUseCase),
         layout.packageImport(project, layout.repositoryImpl),
+        if (apiWire != null) apiWire.clientImport,
         if (includeRemote)
           layout.packageImport(project, layout.remoteDatasource),
         if (includeLocal) layout.packageImport(project, layout.localDatasource),
@@ -868,6 +1066,7 @@ class ${layout.pascal}Provider extends ChangeNotifier {
     required bool includeSearch,
     required bool includeFilters,
     required bool includePagination,
+    ApiFeatureWirePlan? apiWire,
   }) {
     final hints = <String>[
       if (includeSearch) '// Search UI hook enabled.',
@@ -884,6 +1083,7 @@ class ${layout.pascal}Provider extends ChangeNotifier {
       includeRemote: includeRemote,
       includeLocal: includeLocal,
       di: di,
+      apiWire: apiWire,
     );
 
     final dataImports = _pageDataImports(
@@ -893,6 +1093,7 @@ class ${layout.pascal}Provider extends ChangeNotifier {
       includeRemote: includeRemote,
       includeLocal: includeLocal,
       tileImport: tileImport,
+      apiWire: apiWire,
     );
 
     return switch (state) {

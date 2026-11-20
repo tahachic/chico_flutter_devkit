@@ -1,5 +1,6 @@
 import '../core/exceptions.dart';
 import 'api/api_generator.dart';
+import 'auth/auth_generator.dart';
 import 'enum_gen/enum_generator.dart';
 import 'extension_gen/extension_generator.dart';
 import 'feature/feature_generator.dart';
@@ -64,6 +65,7 @@ GeneratorRegistry createDefaultGeneratorRegistry() {
   return GeneratorRegistry(
     generators: [
       ApiGenerator(),
+      AuthGenerator(),
       FeatureGenerator(),
       ModelGenerator(),
       WidgetGenerator(),

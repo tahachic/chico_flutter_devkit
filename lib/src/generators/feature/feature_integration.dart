@@ -6,6 +6,7 @@ import '../../config/models.dart';
 import '../../fs/write_plan.dart';
 import '../context.dart';
 import '../shared/ui_imports.dart';
+import 'api_feature_wire.dart';
 import 'feature_layout.dart';
 
 /// Append-safe route / DI / home hooks for generated features.
@@ -42,6 +43,7 @@ abstract final class FeatureIntegration {
     required bool includeRemote,
     required bool includeLocal,
     bool useMaterialUi = false,
+    ApiFeatureWirePlan? apiWire,
   }) {
     final project = context.config.project.name;
     final useChico =
@@ -89,6 +91,7 @@ abstract final class FeatureIntegration {
               layout: layout,
               includeRemote: includeRemote,
               includeLocal: includeLocal,
+              apiWire: apiWire,
             ),
             mode: FileWriteMode.overwrite,
           ),
@@ -118,6 +121,7 @@ abstract final class FeatureIntegration {
               layout: layout,
               includeRemote: includeRemote,
               includeLocal: includeLocal,
+              apiWire: apiWire,
             ),
             mode: FileWriteMode.overwrite,
           ),
@@ -206,8 +210,10 @@ $routesEnd
     required FeatureLayout layout,
     required bool includeRemote,
     required bool includeLocal,
+    ApiFeatureWirePlan? apiWire,
   }) {
     final importLines = <String>[
+      if (apiWire != null) apiWire.clientImport,
       if (includeRemote) layout.packageImport(project, layout.remoteDatasource),
       if (includeLocal) layout.packageImport(project, layout.localDatasource),
       layout.packageImport(project, layout.repositoryContract),
@@ -220,11 +226,22 @@ $routesEnd
     ].join(', ');
 
     final body = StringBuffer();
+    if (apiWire != null) {
+      body.writeln('''
+  if (!getIt.isRegistered<${apiWire.clientPascal}>()) {
+    getIt.registerLazySingleton<${apiWire.clientPascal}>(
+      ${apiWire.clientPascal}.new,
+    );
+  }''');
+    }
     if (includeRemote) {
+      final remoteFactory = apiWire == null
+          ? '${layout.pascal}RemoteDataSource.new'
+          : '() => ${layout.pascal}RemoteDataSource(api: getIt())';
       body.writeln('''
   if (!getIt.isRegistered<${layout.pascal}RemoteDataSource>()) {
     getIt.registerLazySingleton<${layout.pascal}RemoteDataSource>(
-      ${layout.pascal}RemoteDataSource.new,
+      $remoteFactory,
     );
   }''');
     }
@@ -322,15 +339,20 @@ $providerExportsEnd
     required FeatureLayout layout,
     required bool includeRemote,
     required bool includeLocal,
+    ApiFeatureWirePlan? apiWire,
   }) {
     final importLines = <String>[
+      if (apiWire != null) apiWire.clientImport,
       if (includeRemote) layout.packageImport(project, layout.remoteDatasource),
       if (includeLocal) layout.packageImport(project, layout.localDatasource),
       layout.packageImport(project, layout.repositoryImpl),
       layout.packageImport(project, layout.getUseCase),
     ];
+    final remoteExpr = apiWire == null
+        ? '${layout.pascal}RemoteDataSource()'
+        : '${layout.pascal}RemoteDataSource(api: ${apiWire.clientPascal}())';
     final ctorArgs = [
-      if (includeRemote) 'remote: ${layout.pascal}RemoteDataSource()',
+      if (includeRemote) 'remote: $remoteExpr',
       if (includeLocal) 'local: ${layout.pascal}LocalDataSource()',
     ].join(', ');
     final method =

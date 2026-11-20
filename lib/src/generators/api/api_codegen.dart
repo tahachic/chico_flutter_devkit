@@ -283,6 +283,10 @@ final class ${clientPascal}Exception implements Exception {
       ..writeln('  void close() => _httpClient.close(force: false);')
       ..writeln();
 
+    final hasMultipart = document.operations.any(
+      (op) => op.requestEncoding == OpenApiRequestEncoding.multipart,
+    );
+
     for (final op in document.operations) {
       buffer
         ..writeln(_operationMethod(clientPascal, op))
@@ -290,13 +294,14 @@ final class ${clientPascal}Exception implements Exception {
     }
 
     buffer
-      ..writeln(_helpers(clientPascal))
+      ..writeln(_helpers(clientPascal, includeMultipart: hasMultipart))
       ..writeln('}');
 
-    // Multipart helper types live outside the client class.
-    buffer
-      ..writeln()
-      ..writeln(multipartHelpers());
+    if (hasMultipart) {
+      buffer
+        ..writeln()
+        ..writeln(multipartHelpers());
+    }
 
     return buffer.toString();
   }
@@ -489,6 +494,11 @@ devkit generate api $clientSnake --spec path/to/openapi.yaml --force
           "    final response = await _send('${op.method.name.toUpperCase()}', path, "
           'query: query, headers: headers, bodyBytes: bodyBytes);',
         );
+    } else if (returnType == 'void') {
+      buffer.writeln(
+        "    await _send('${op.method.name.toUpperCase()}', path, "
+        'query: query, headers: headers);',
+      );
     } else {
       buffer.writeln(
         "    final response = await _send('${op.method.name.toUpperCase()}', path, "
@@ -716,7 +726,40 @@ ${lines.join('\n')}
         .replaceAll(r'$', r'\$');
   }
 
-  static String _helpers(String clientPascal) {
+  static String _helpers(
+    String clientPascal, {
+    required bool includeMultipart,
+  }) {
+    final multipartEncode = includeMultipart
+        ? '''
+
+  List<int> _encodeMultipart(String boundary, List<_MultipartPart> parts) {
+    final bytes = <int>[];
+    void writeAscii(String value) => bytes.addAll(utf8.encode(value));
+    for (final part in parts) {
+      writeAscii('--\$boundary\\r\\n');
+      if (part.bytes != null) {
+        final filename = part.filename ?? part.name;
+        writeAscii(
+          'Content-Disposition: form-data; name="\${part.name}"; '
+          'filename="\$filename"\\r\\n',
+        );
+        writeAscii('Content-Type: application/octet-stream\\r\\n\\r\\n');
+        bytes.addAll(part.bytes!);
+        writeAscii('\\r\\n');
+      } else {
+        writeAscii(
+          'Content-Disposition: form-data; name="\${part.name}"\\r\\n\\r\\n',
+        );
+        writeAscii('\${part.value ?? ""}\\r\\n');
+      }
+    }
+    writeAscii('--\$boundary--\\r\\n');
+    return bytes;
+  }
+'''
+        : '';
+
     return '''
   static String _normalizeBaseUrl(String value) {
     return value.endsWith('/') ? value.substring(0, value.length - 1) : value;
@@ -777,32 +820,7 @@ ${lines.join('\n')}
       );
     }
   }
-
-  List<int> _encodeMultipart(String boundary, List<_MultipartPart> parts) {
-    final bytes = <int>[];
-    void writeAscii(String value) => bytes.addAll(utf8.encode(value));
-    for (final part in parts) {
-      writeAscii('--\$boundary\\r\\n');
-      if (part.bytes != null) {
-        final filename = part.filename ?? part.name;
-        writeAscii(
-          'Content-Disposition: form-data; name="\${part.name}"; '
-          'filename="\$filename"\\r\\n',
-        );
-        writeAscii('Content-Type: application/octet-stream\\r\\n\\r\\n');
-        bytes.addAll(part.bytes!);
-        writeAscii('\\r\\n');
-      } else {
-        writeAscii(
-          'Content-Disposition: form-data; name="\${part.name}"\\r\\n\\r\\n',
-        );
-        writeAscii('\${part.value ?? ""}\\r\\n');
-      }
-    }
-    writeAscii('--\$boundary--\\r\\n');
-    return bytes;
-  }
-''';
+$multipartEncode''';
   }
 
   /// Multipart helper types (outside the client class).

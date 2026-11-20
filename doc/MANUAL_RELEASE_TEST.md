@@ -305,13 +305,22 @@ devkit generate api bad --spec openapi/bad_oneof.yaml ; echo exit:$?
 
 Full matrix: [OPENAPI_SUPPORT_MATRIX.md](../OPENAPI_SUPPORT_MATRIX.md).
 
-### 2.2 (Optional) Wire API into products remote datasource
+### 2.2 Wire API into products remote datasource
 
-Manually point `products` remote datasource at the generated client (or leave a
-TODO). Not required for DevKit pass, but good confidence:
+Prefer the built-in wire (fail-closed):
 
-- [ ] App still analyzes after your edits
-- [ ] Or you documented “demo in-memory kept; API client generated only”
+```bash
+# If products feature already exists from §1.3, use a fresh name or --force carefully.
+devkit generate feature catalog --from-api shop --pagination --search --no-tests
+flutter analyze --fatal-infos
+```
+
+- [ ] Command exits 0; summary mentions the API client (e.g. `ShopApi`)
+- [ ] Remote datasource calls `listProducts` (not demo in-memory seeds)
+- [ ] Missing client / bad mapping fails closed with a clear error (try `--from-api missing`)
+- [ ] Optional: `devkit generate auth session` then analyze clean
+
+Manual hand-wire is still fine for confidence, but not required when `--from-api` passes.
 
 ---
 

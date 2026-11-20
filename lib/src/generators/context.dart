@@ -16,6 +16,7 @@ final class GenerationContext {
     this.templateCatalog,
     this.dryRun = false,
     this.force = false,
+    this.sync = false,
     this.extra = const {},
   });
 
@@ -27,6 +28,9 @@ final class GenerationContext {
   final TemplateCatalog? templateCatalog;
   final bool dryRun;
   final bool force;
+
+  /// Refresh unchanged generated files recorded in the generate manifest.
+  final bool sync;
   final Map<String, Object?> extra;
 
   /// Convenience: config + naming template variables.
@@ -54,6 +58,7 @@ final class GenerationContext {
     TemplateCatalog? templateCatalog,
     bool? dryRun,
     bool? force,
+    bool? sync,
     Map<String, Object?>? extra,
   }) {
     return GenerationContext(
@@ -65,6 +70,7 @@ final class GenerationContext {
       templateCatalog: templateCatalog ?? this.templateCatalog,
       dryRun: dryRun ?? this.dryRun,
       force: force ?? this.force,
+      sync: sync ?? this.sync,
       extra: extra ?? this.extra,
     );
   }
@@ -79,6 +85,7 @@ final class GenerationContextFactory {
     required String name,
     bool dryRun = false,
     bool force = false,
+    bool sync = false,
     Map<String, Object?> extra = const {},
     TemplateCatalog? templateCatalog,
   }) {
@@ -96,6 +103,7 @@ final class GenerationContextFactory {
       templateCatalog: templateCatalog,
       dryRun: dryRun,
       force: force || resolved.config.generation.overwrite,
+      sync: sync,
       extra: extra,
     );
   }

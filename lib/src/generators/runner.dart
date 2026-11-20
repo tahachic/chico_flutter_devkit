@@ -1,6 +1,12 @@
+import 'dart:io';
+
+import 'package:path/path.dart' as p;
+
 import '../config/config_service.dart';
 import '../config/overrides.dart';
+import '../core/exceptions.dart';
 import '../fs/write_plan.dart';
+import '../project/generate_manifest.dart';
 import '../template/catalog.dart';
 import 'context.dart';
 import 'generator.dart';
@@ -28,6 +34,7 @@ final class GeneratorRunner {
     ConfigOverrides overrides = const ConfigOverrides(),
     bool dryRun = false,
     bool force = false,
+    bool sync = false,
     Map<String, Object?> extra = const {},
   }) async {
     final generator = registry.get(generatorName);
@@ -41,6 +48,7 @@ final class GeneratorRunner {
       name: targetName,
       dryRun: dryRun,
       force: force,
+      sync: sync,
       extra: extra,
       templateCatalog: templateCatalog,
     );
@@ -57,11 +65,67 @@ abstract class BaseGenerator implements Generator {
     required List<PlannedFileWrite> writes,
     String? message,
   }) async {
+    final manifest = GenerateManifest.load(context.projectRoot);
+    final effective = <PlannedFileWrite>[];
+
+    for (final write in writes) {
+      final absolute = context.fileSystem.resolvePath(write.relativePath);
+      final exists = File(absolute).existsSync();
+      var mode = write.mode;
+
+      if (context.force && mode == FileWriteMode.create) {
+        mode = FileWriteMode.overwrite;
+      } else if (context.sync &&
+          exists &&
+          mode == FileWriteMode.create &&
+          manifest.isUnchanged(write.relativePath)) {
+        mode = FileWriteMode.overwrite;
+      } else if (context.sync &&
+          exists &&
+          mode == FileWriteMode.create &&
+          manifest[write.relativePath] != null &&
+          !manifest.isUnchanged(write.relativePath)) {
+        throw ExecutionException(
+          'Refusing to sync user-edited generated file.',
+          details:
+              '${p.normalize(absolute)}\n'
+              'Use --force to overwrite, or restore the file before --sync.',
+        );
+      }
+
+      effective.add(
+        PlannedFileWrite(
+          relativePath: write.relativePath,
+          content: write.content,
+          mode: mode,
+        ),
+      );
+    }
+
     final result = await context.fileSystem.applyWrites(
-      writes,
+      effective,
       dryRun: context.dryRun,
       force: context.force,
     );
+
+    if (!context.dryRun) {
+      for (final write in effective) {
+        final matches = result.results
+            .where((r) => r.relativePath == write.relativePath)
+            .toList(growable: false);
+        if (matches.isEmpty) continue;
+        final outcome = matches.first.outcome;
+        if (outcome == FileWriteOutcome.skippedExists) continue;
+        if (outcome == FileWriteOutcome.dryRun) continue;
+        manifest.upsert(
+          relativePath: write.relativePath,
+          generator: name,
+          content: write.content,
+        );
+      }
+      await manifest.save();
+    }
+
     return GenerationResult(
       generatorName: name,
       writes: result,

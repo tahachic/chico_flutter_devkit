@@ -195,6 +195,19 @@ See [OPENAPI.md](OPENAPI.md).
 
 ---
 
+## Wire OpenAPI client into a feature
+
+```bash
+devkit generate api shop --spec openapi.yaml
+devkit generate feature products --from-api shop --pagination --search
+devkit generate auth session
+```
+
+`--from-api` fails closed if the client is missing or fields cannot map.
+Use `--sync` later to refresh unchanged generated files (not user edits).
+
+---
+
 ## Add Chico to an existing app
 
 ```bash

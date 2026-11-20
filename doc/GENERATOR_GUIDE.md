@@ -30,10 +30,23 @@ devkit generate feature catalog --architecture layered --state riverpod --no-tes
 | `--local` | local datasource |
 | `--remote` / `--no-remote` | remote datasource (default on) |
 | `--fields` | entity/model fields |
+| `--from-api <name>` | Wire remote datasource to `lib/api/<name>/generated` (fail-closed) |
 
 Open **Home → feature name** or `/features/<name>` after generate (go_router
 `context.go` or Navigator `pushNamed`, matching create `--routing`). Demo data
 is not production CRUD — swap the datasource for your API when ready.
+
+### Wire OpenAPI client into a feature
+
+```bash
+devkit generate api shop --spec openapi/shop_api.yaml
+devkit generate feature products --from-api shop --pagination --search
+# With --crud, the API must expose create/update/delete for the list item type.
+```
+
+Fail-closed when the client is missing, no `Future<List<…>>` list method exists,
+or a required feature field cannot be mapped from the API model. Shared flags:
+`--dry-run`, `--force`, `--sync` (refresh unchanged manifest files only).
 
 ### Layout (clean / feature-first)
 
@@ -159,6 +172,23 @@ devkit generate test ProductCard --kind widget --target widget
 |------|--------|
 | `--kind` | `unit` (default), `widget` |
 | `--target` | logical folder/type hint (`model`, `service`, …) |
+
+---
+
+## `auth`
+
+```bash
+devkit generate auth session
+```
+
+Creates:
+
+- `lib/core/auth/session_token_store.dart` — in-memory token holder
+- `lib/core/auth/session_auth.dart` — façade for generated `*ApiAuth` bearer tokens
+- `lib/core/config/app_config.dart` — flavors via `--dart-define=ENV=dev|staging|prod`
+- `lib/core/di/auth_registrations.dart` — get_it registrations (when DI is get_it)
+
+Tokens are stubs until you fill credentials. Only the `session` pack is supported.
 
 ---
 

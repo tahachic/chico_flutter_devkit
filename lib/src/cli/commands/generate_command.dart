@@ -103,6 +103,19 @@ final class GenerateCommand extends DevKitCommand {
             'Logical target folder/type for test generator (model, service, …).',
       )
       ..addOption(
+        'from-api',
+        help:
+            'Wire feature remote datasource to a generated API client '
+            '(e.g. shop → lib/api/shop/generated).',
+      )
+      ..addFlag(
+        'sync',
+        help:
+            'Refresh unchanged generated files recorded in the generate '
+            'manifest (does not overwrite user edits).',
+        negatable: false,
+      )
+      ..addOption(
         'spec',
         help: 'Path to an OpenAPI 3.x YAML/JSON file (api generator).',
       )
@@ -160,6 +173,7 @@ final class GenerateCommand extends DevKitCommand {
     final targetName = rest[1];
     final dryRun = argResults!['dry-run'] as bool;
     final force = argResults!['force'] as bool;
+    final sync = argResults!['sync'] as bool;
 
     final architectureRaw = argResults!['architecture'] as String?;
     final stateRaw = argResults!['state'] as String?;
@@ -191,6 +205,8 @@ final class GenerateCommand extends DevKitCommand {
       'spec': ?argResults!['spec'],
       'baseUrl': ?argResults!['base-url'],
       'output': ?argResults!['output'],
+      'fromApi': ?argResults!['from-api'],
+      'sync': sync,
       'addMissingChico': argResults!['add-missing-chico'] as bool,
     };
 
@@ -221,6 +237,7 @@ final class GenerateCommand extends DevKitCommand {
       overrides: overrides,
       dryRun: dryRun,
       force: force,
+      sync: sync,
       extra: extra,
     );
 

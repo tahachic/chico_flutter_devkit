@@ -2,6 +2,29 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.1.0
+
+### Added
+
+- **`--from-api <name>`** on `generate feature` — wires remote datasource to
+  `lib/api/<name>/generated` (list + optional page/q; `--crud` when create/
+  update/delete exist). Fail-closed on missing client, no list op, or
+  unmappable required fields
+- **`--sync`** — refresh unchanged generated files via
+  `.chico/generate_manifest.yaml`; refuses user-edited files (use `--force`)
+- **`generate auth session`** — token store, SessionAuth façade for API bearer
+  hooks, and `AppConfig` flavors via `--dart-define=ENV=dev|staging|prod`
+
+### Fixed
+
+- OpenAPI client no longer emits unused multipart helpers when the spec has no
+  multipart ops; void responses no longer bind an unused `response` variable
+  (keeps `flutter analyze --fatal-infos` clean)
+
+### Docs
+
+- GENERATOR_GUIDE / COOKBOOK / MANUAL_RELEASE_TEST §2.2 updated for `--from-api`
+
 ## 1.0.0
 
 ### Added
