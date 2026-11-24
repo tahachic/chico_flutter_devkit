@@ -307,20 +307,29 @@ Full matrix: [OPENAPI_SUPPORT_MATRIX.md](../OPENAPI_SUPPORT_MATRIX.md).
 
 ### 2.2 Wire API into products remote datasource
 
-Prefer the built-in wire (fail-closed):
+Prefer one-shot `--spec` (fail-closed before writes):
 
 ```bash
-# If products feature already exists from §1.3, use a fresh name or --force carefully.
-devkit generate feature catalog --from-api shop --pagination --search --no-tests
+# Fresh feature name if products already exists from §1.3.
+devkit generate feature catalog --spec openapi/shop_api.yaml --api-name shop --pagination --search
 flutter analyze --fatal-infos
+flutter test
+```
+
+Or two-step (`--from-api`) when the client already exists:
+
+```bash
+devkit generate feature catalog --from-api shop --pagination --search --no-tests
 ```
 
 - [ ] Command exits 0; summary mentions the API client (e.g. `ShopApi`)
 - [ ] Remote datasource calls `listProducts` (not demo in-memory seeds)
-- [ ] Missing client / bad mapping fails closed with a clear error (try `--from-api missing`)
-- [ ] Optional: `devkit generate auth session` then analyze clean
-
-Manual hand-wire is still fine for confidence, but not required when `--from-api` passes.
+- [ ] Home link / `/features/catalog` route present
+- [ ] Mapping + use-case tests generated; `flutter test` passes
+- [ ] Missing client / bad mapping fails closed (try `--from-api missing`)
+- [ ] Custom region: edit inside `remote.map`, `--sync` preserves it; edit outside refuses
+- [ ] `devkit doctor` shows `generate.manifest_drift` after an outside edit
+- [ ] `devkit generate auth session --ui` → login page + `/features/*` guard; analyze clean
 
 ---
 

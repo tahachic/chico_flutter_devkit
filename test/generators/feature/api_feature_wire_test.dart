@@ -219,7 +219,7 @@ class HomePage extends StatelessWidget {
     ).readAsStringSync();
     expect(remote, contains('ShopApi'));
     expect(remote, contains('listProducts'));
-    expect(remote, contains('_mapDto'));
+    expect(remote, contains('mapDto'));
     expect(remote, isNot(contains('Demo in-memory')));
 
     final di = regs.readAsStringSync();

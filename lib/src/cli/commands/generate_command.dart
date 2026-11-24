@@ -108,6 +108,12 @@ final class GenerateCommand extends DevKitCommand {
             'Wire feature remote datasource to a generated API client '
             '(e.g. shop → lib/api/shop/generated).',
       )
+      ..addOption(
+        'api-name',
+        help:
+            'API client name when using feature --spec '
+            '(default: feature name → lib/api/<name>).',
+      )
       ..addFlag(
         'sync',
         help:
@@ -115,9 +121,16 @@ final class GenerateCommand extends DevKitCommand {
             'manifest (does not overwrite user edits).',
         negatable: false,
       )
+      ..addFlag(
+        'ui',
+        help: 'Include UI screens (auth session --ui).',
+        negatable: false,
+      )
       ..addOption(
         'spec',
-        help: 'Path to an OpenAPI 3.x YAML/JSON file (api generator).',
+        help:
+            'OpenAPI 3.x YAML/JSON path (api generator, or feature --spec to '
+            'generate client + wire feature in one step).',
       )
       ..addOption(
         'base-url',
@@ -206,7 +219,9 @@ final class GenerateCommand extends DevKitCommand {
       'baseUrl': ?argResults!['base-url'],
       'output': ?argResults!['output'],
       'fromApi': ?argResults!['from-api'],
+      'apiName': ?argResults!['api-name'],
       'sync': sync,
+      'ui': argResults!['ui'] as bool,
       'addMissingChico': argResults!['add-missing-chico'] as bool,
     };
 

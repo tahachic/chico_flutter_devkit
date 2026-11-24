@@ -8,6 +8,7 @@ import '../config/config_service.dart';
 import '../config/defaults.dart';
 import '../core/exceptions.dart';
 import '../integrations/chico/chico_packages.dart';
+import '../project/generate_manifest.dart';
 import '../pubspec/pubspec_editor.dart';
 import '../quality/tool_runner.dart';
 import 'models.dart';
@@ -252,6 +253,31 @@ final class DoctorService {
           );
         }
       }
+    }
+
+    try {
+      final manifest = GenerateManifest.load(root);
+      for (final path in manifest.entries.keys) {
+        if (!manifest.isUnchanged(path)) {
+          issues.add(
+            DoctorIssue(
+              severity: DoctorSeverity.low,
+              code: 'generate.manifest_drift',
+              message: 'Generated file differs from the generate manifest.',
+              details: path,
+            ),
+          );
+        }
+      }
+    } on DevKitException catch (error) {
+      issues.add(
+        DoctorIssue(
+          severity: DoctorSeverity.medium,
+          code: 'generate.manifest_corrupt',
+          message: error.message,
+          details: error.details,
+        ),
+      );
     }
 
     final analysisOptions = File(p.join(root, 'analysis_options.yaml'));

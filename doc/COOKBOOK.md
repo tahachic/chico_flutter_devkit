@@ -195,7 +195,14 @@ See [OPENAPI.md](OPENAPI.md).
 
 ---
 
-## Wire OpenAPI client into a feature
+## OpenAPI → runnable screen (one command)
+
+```bash
+devkit generate feature products --spec openapi.yaml --api-name shop --pagination --search
+devkit generate auth session --ui
+```
+
+Or wire an existing client:
 
 ```bash
 devkit generate api shop --spec openapi.yaml
@@ -203,8 +210,10 @@ devkit generate feature products --from-api shop --pagination --search
 devkit generate auth session
 ```
 
-`--from-api` fails closed if the client is missing or fields cannot map.
-Use `--sync` later to refresh unchanged generated files (not user edits).
+`--spec` / `--from-api` fail closed if the client is missing or fields cannot map.
+Use `--sync` later to refresh unchanged generated files; edits inside
+`// <devkit:custom id="…">` regions are preserved. Outside-region edits refuse
+`--sync` (use `--force`). `devkit doctor` warns on `generate.manifest_drift`.
 
 ---
 

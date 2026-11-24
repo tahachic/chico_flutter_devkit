@@ -1,3 +1,7 @@
+import 'dart:io';
+
+import 'package:path/path.dart' as p;
+
 import '../../core/exceptions.dart';
 import '../../fs/write_plan.dart';
 import '../context.dart';
@@ -24,6 +28,28 @@ final class TestGenerator extends BaseGenerator {
         details: 'Expected: unit or widget',
       );
     }
+    final target =
+        (context.extra['target'] as String?)?.trim().toLowerCase() ?? 'generic';
+    if (target == 'feature') {
+      final snake = context.targetName.snakeCase;
+      final entityPath = p.join(
+        context.projectRoot,
+        'lib',
+        'features',
+        snake,
+        'domain',
+        'entities',
+        '$snake.dart',
+      );
+      if (!File(entityPath).existsSync()) {
+        throw InvalidUsageException(
+          'Feature "$snake" was not found.',
+          details:
+              'Expected lib/features/$snake/domain/entities/$snake.dart\n'
+              'Generate the feature first.',
+        );
+      }
+    }
   }
 
   @override
@@ -36,6 +62,10 @@ final class TestGenerator extends BaseGenerator {
     final pascal = context.targetName.pascalCase;
     final snake = context.targetName.snakeCase;
     final project = context.config.project.name;
+
+    if (target == 'feature' && kind == 'unit') {
+      return _featureOrientedTests(context, project: project, snake: snake);
+    }
 
     final relativePath = feature == null
         ? 'test/$target/${snake}_test.dart'
@@ -60,6 +90,71 @@ final class TestGenerator extends BaseGenerator {
       writes: [PlannedFileWrite(relativePath: relativePath, content: content)],
       message:
           '${kind[0].toUpperCase()}${kind.substring(1)} test for $pascal generated.',
+    );
+  }
+
+  /// Refreshes feature-oriented mapping/use-case stubs when a feature exists.
+  Future<GenerationResult> _featureOrientedTests(
+    GenerationContext context, {
+    required String project,
+    required String snake,
+  }) async {
+    final pascal = context.targetName.pascalCase;
+    final writes = <PlannedFileWrite>[
+      PlannedFileWrite(
+        relativePath: 'test/features/$snake/${snake}_entity_test.dart',
+        content:
+            '''
+import 'package:flutter_test/flutter_test.dart';
+import 'package:$project/features/$snake/domain/entities/$snake.dart';
+
+void main() {
+  group('$pascal', () {
+    test('constructs with required fields', () {
+      final item = $pascal(id: '1');
+      expect(item.id, '1');
+    });
+  });
+}
+''',
+      ),
+    ];
+
+    final remotePath = p.join(
+      context.projectRoot,
+      'lib',
+      'features',
+      snake,
+      'data',
+      'datasources',
+      '${snake}_remote_datasource.dart',
+    );
+    if (File(remotePath).existsSync()) {
+      writes.add(
+        PlannedFileWrite(
+          relativePath: 'test/features/$snake/${snake}_mapping_test.dart',
+          content:
+              '''
+import 'package:flutter_test/flutter_test.dart';
+// Refresh with: regenerate the feature with --from-api / --spec
+// Mapping coverage lives in ${snake}_remote_datasource.dart mapDto.
+
+void main() {
+  group('$pascal remote mapping', () {
+    test('placeholder — regenerate feature to refresh mapping asserts', () {
+      expect(true, isTrue);
+    });
+  });
+}
+''',
+        ),
+      );
+    }
+
+    return commitWrites(
+      context: context,
+      writes: writes,
+      message: 'Feature-oriented unit tests for $pascal generated.',
     );
   }
 

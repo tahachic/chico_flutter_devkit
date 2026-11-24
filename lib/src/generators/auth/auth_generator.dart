@@ -1,13 +1,21 @@
+import 'dart:io';
+
+import 'package:path/path.dart' as p;
+
 import '../../config/models.dart';
 import '../../core/exceptions.dart';
+import '../../fs/custom_regions.dart';
 import '../../fs/write_plan.dart';
 import '../context.dart';
 import '../result.dart';
 import '../runner.dart';
+import '../shared/ui_imports.dart';
 
-/// Generates a minimal session/auth scaffold that plugs into generated API auth.
+/// Generates a session/auth scaffold that plugs into generated API auth.
 ///
-/// Usage: `devkit generate auth session`
+/// Usage:
+///   `devkit generate auth session`
+///   `devkit generate auth session --ui`  (login page + route guard)
 final class AuthGenerator extends BaseGenerator {
   @override
   String get name => 'auth';
@@ -25,12 +33,55 @@ final class AuthGenerator extends BaseGenerator {
         details: 'Supported: session\nExample: devkit generate auth session',
       );
     }
+    if (context.extra['ui'] == true) {
+      final router = File(
+        p.join(
+          context.projectRoot,
+          'lib',
+          'core',
+          'routing',
+          'app_router.dart',
+        ),
+      );
+      if (!router.existsSync()) {
+        throw const InvalidUsageException(
+          'Auth --ui requires lib/core/routing/app_router.dart.',
+          details: 'Create the app with DevKit first, then re-run.',
+        );
+      }
+      final source = router.readAsStringSync();
+      if (!source.contains('AppRouter') || !source.contains('featureRoutes')) {
+        throw const InvalidUsageException(
+          'Auth --ui requires DevKit AppRouter anchors (featureRoutes).',
+        );
+      }
+      if (context.config.flutter.dependencyInjection ==
+          DependencyInjection.getIt) {
+        final injector = File(
+          p.join(context.projectRoot, 'lib', 'core', 'di', 'injector.dart'),
+        );
+        if (!injector.existsSync()) {
+          throw const InvalidUsageException(
+            'Auth --ui requires lib/core/di/injector.dart for get_it.',
+          );
+        }
+        if (!injector.readAsStringSync().contains('registerFeatures(getIt);')) {
+          throw const InvalidUsageException(
+            'Auth --ui could not find registerFeatures(getIt); in injector.dart.',
+          );
+        }
+      }
+    }
   }
 
   @override
   Future<GenerationResult> generate(GenerationContext context) async {
     final project = context.config.project.name;
     final di = context.config.flutter.dependencyInjection;
+    final withUi = context.extra['ui'] == true;
+    final useMaterialUi = await UiImports.projectUsesMaterialUi(
+      context.projectRoot,
+    );
 
     final writes = <PlannedFileWrite>[
       PlannedFileWrite(
@@ -54,18 +105,247 @@ final class AuthGenerator extends BaseGenerator {
           content: _getItRegistrations(project: project),
         ),
       );
+      final injector = _upsertInjectorRegisterAuth(context.projectRoot);
+      if (injector != null) {
+        writes.add(
+          PlannedFileWrite(
+            relativePath: 'lib/core/di/injector.dart',
+            content: injector,
+            mode: FileWriteMode.overwrite,
+          ),
+        );
+      }
+    }
+
+    if (withUi) {
+      final routing = context.config.flutter.routing;
+      writes.add(
+        PlannedFileWrite(
+          relativePath: 'lib/features/auth/presentation/pages/login_page.dart',
+          content: _loginPage(
+            project: project,
+            useMaterialUi: useMaterialUi,
+            di: di,
+            routing: routing,
+          ),
+        ),
+      );
+      writes.add(
+        PlannedFileWrite(
+          relativePath: 'lib/core/routing/app_router.dart',
+          content: _upsertAppRouterGuard(
+            root: context.projectRoot,
+            project: project,
+            routing: routing,
+            di: di,
+          ),
+          mode: FileWriteMode.overwrite,
+        ),
+      );
     }
 
     return commitWrites(
       context: context,
       writes: writes,
-      message:
-          'Auth session scaffold generated.\n'
-          'Wire SessionAuth into your API client auth (bearer token).\n'
-          'Select flavor with --dart-define=ENV=dev|staging|prod '
-          '(see lib/core/config/app_config.dart).\n'
-          'Tokens are stubs until you fill credentials.',
+      message: withUi
+          ? 'Auth session + login UI generated.\n'
+                'Visit /login; /features/* redirects when unsigned-in.\n'
+                'Stub sign-in accepts any non-empty password.'
+          : 'Auth session scaffold generated.\n'
+                'Wire SessionAuth into your API client auth (bearer token).\n'
+                'Select flavor with --dart-define=ENV=dev|staging|prod.\n'
+                'Add --ui for login page + route guard.',
     );
+  }
+
+  String? _upsertInjectorRegisterAuth(String root) {
+    final file = File(p.join(root, 'lib', 'core', 'di', 'injector.dart'));
+    if (!file.existsSync()) return null;
+    var source = file.readAsStringSync();
+    if (!source.contains('registerAuth')) {
+      if (!source.contains('auth_registrations.dart')) {
+        source = source.replaceFirst(
+          "import 'feature_registrations.dart';",
+          "import 'auth_registrations.dart';\nimport 'feature_registrations.dart';",
+        );
+        if (!source.contains('auth_registrations.dart')) {
+          source = "import 'auth_registrations.dart';\n$source";
+        }
+      }
+      if (source.contains('registerFeatures(getIt);')) {
+        source = source.replaceFirst(
+          'registerFeatures(getIt);',
+          'registerAuth(getIt);\n  registerFeatures(getIt);',
+        );
+      } else {
+        throw const InvalidUsageException(
+          'Could not hook registerAuth into injector.dart.',
+          details: 'Expected registerFeatures(getIt); call site.',
+        );
+      }
+    }
+    return source;
+  }
+
+  String _upsertAppRouterGuard({
+    required String root,
+    required String project,
+    required Routing routing,
+    required DependencyInjection di,
+  }) {
+    final file = File(
+      p.join(root, 'lib', 'core', 'routing', 'app_router.dart'),
+    );
+    final existing = file.readAsStringSync();
+    if (routing == Routing.goRouter) {
+      return '''
+import 'package:go_router/go_router.dart';
+${di == DependencyInjection.getIt ? "import 'package:$project/core/di/injector.dart';\nimport 'package:$project/core/auth/session_auth.dart';" : ''}
+import 'package:$project/features/auth/presentation/pages/login_page.dart';
+import 'package:$project/features/home/presentation/pages/home_page.dart';
+import 'feature_routes.dart';
+
+/// Application router (go_router) with auth redirect for /features/*.
+abstract final class AppRouter {
+  static final GoRouter router = GoRouter(
+    redirect: (context, state) {
+      final path = state.uri.path;
+      final signedIn = ${di == DependencyInjection.getIt ? 'getIt.isRegistered<SessionAuth>() && getIt<SessionAuth>().bearerToken != null' : 'false /* wire SessionAuth for your DI */'};
+      final loggingIn = path == '/login';
+      if (!signedIn && path.startsWith('/features')) {
+        return '/login';
+      }
+      if (signedIn && loggingIn) {
+        return '/';
+      }
+      return null;
+    },
+    routes: [
+      GoRoute(
+        path: '/',
+        builder: (context, state) => const HomePage(),
+      ),
+      GoRoute(
+        path: '/login',
+        builder: (context, state) => const LoginPage(),
+      ),
+      ...featureRoutes,
+    ],
+  );
+}
+
+${CustomRegions.stub('router.extra', comment: 'Extra GoRouter options')}
+''';
+    }
+
+    // Navigator 1.0 — keep existing map and document guard manually.
+    if (!existing.contains('LoginPage')) {
+      return existing.replaceFirst(
+        'static Map<String, WidgetBuilder> get routes => {',
+        "import 'package:$project/features/auth/presentation/pages/login_page.dart';\n\n"
+            '/// Application router (Navigator 1.0 named routes).\n'
+            'abstract final class AppRouter {\n'
+            "  static const home = '/';\n"
+            "  static const login = '/login';\n\n"
+            '  static Map<String, WidgetBuilder> get routes => {\n'
+            '        login: (_) => const LoginPage(),',
+      );
+    }
+    return existing;
+  }
+
+  String _loginPage({
+    required String project,
+    required bool useMaterialUi,
+    required DependencyInjection di,
+    required Routing routing,
+  }) {
+    final materialImport = useMaterialUi
+        ? "import 'package:material_ui/material.dart';"
+        : "import 'package:flutter/material.dart';";
+    final authResolve = switch (di) {
+      DependencyInjection.getIt => 'getIt<SessionAuth>()',
+      DependencyInjection.manual => 'SessionAuth(SessionTokenStore())',
+      DependencyInjection.riverpod => 'SessionAuth(SessionTokenStore())',
+    };
+    final diImport = di == DependencyInjection.getIt
+        ? "import 'package:$project/core/di/injector.dart';"
+        : '';
+    final storeImport = di == DependencyInjection.getIt
+        ? ''
+        : "import 'package:$project/core/auth/session_token_store.dart';\n";
+    final goRouterImport = routing == Routing.goRouter
+        ? "import 'package:go_router/go_router.dart';\n"
+        : '';
+    final navigateHome = routing == Routing.goRouter
+        ? "    context.go('/');"
+        : "    Navigator.of(context).pushReplacementNamed('/');";
+    return '''
+$materialImport
+$goRouterImport
+import 'package:$project/core/auth/session_auth.dart';
+$storeImport$diImport
+
+/// Generated by Chico Flutter DevKit — stub login (any non-empty password).
+class LoginPage extends StatefulWidget {
+  const LoginPage({super.key});
+
+  @override
+  State<LoginPage> createState() => _LoginPageState();
+}
+
+class _LoginPageState extends State<LoginPage> {
+  final _email = TextEditingController();
+  final _password = TextEditingController();
+  String? _error;
+
+  @override
+  void dispose() {
+    _email.dispose();
+    _password.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    final password = _password.text.trim();
+    if (password.isEmpty) {
+      setState(() => _error = 'Password required');
+      return;
+    }
+    final auth = $authResolve;
+    await auth.signInStub(token: 'stub-\${_email.text.trim()}');
+${CustomRegions.stub('login.afterSignIn', comment: 'Post sign-in hooks')}
+    if (!mounted) return;
+$navigateHome
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Login')),
+      body: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          children: [
+            TextField(
+              controller: _email,
+              decoration: const InputDecoration(labelText: 'Email'),
+            ),
+            TextField(
+              controller: _password,
+              obscureText: true,
+              decoration: const InputDecoration(labelText: 'Password'),
+            ),
+            if (_error != null) Text(_error!, style: const TextStyle(color: Colors.red)),
+            const SizedBox(height: 16),
+            FilledButton(onPressed: _submit, child: const Text('Sign in')),
+          ],
+        ),
+      ),
+    );
+  }
+}
+''';
   }
 
   String _tokenStore() => '''
@@ -89,19 +369,16 @@ import 'package:$project/core/auth/session_token_store.dart';
 import 'package:$project/core/config/app_config.dart';
 
 /// Generated by Chico Flutter DevKit — session façade for API clients.
-///
-/// Pass [bearerToken] into generated `*ApiAuth` when constructing the client:
-///
-/// ```dart
-/// final auth = SessionAuth(store);
-/// final client = ShopApi(auth: ShopApiAuth(bearerToken: auth.bearerToken));
-/// ```
 class SessionAuth {
   SessionAuth(this._store);
 
   final SessionTokenStore _store;
 
   String? get bearerToken => _store.accessToken;
+
+  bool get isSignedIn => _accessTokenOrNull != null;
+
+  String? get _accessTokenOrNull => _store.accessToken;
 
   AppConfig get config => AppConfig.current;
 
@@ -117,9 +394,6 @@ class SessionAuth {
 
   String _appConfig() => '''
 /// Generated by Chico Flutter DevKit — flavor config via --dart-define=ENV=…
-///
-/// Example:
-///   flutter run --dart-define=ENV=staging
 class AppConfig {
   const AppConfig({
     required this.env,

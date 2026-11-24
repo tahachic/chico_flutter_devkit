@@ -5,6 +5,7 @@ import 'package:path/path.dart' as p;
 import '../config/config_service.dart';
 import '../config/overrides.dart';
 import '../core/exceptions.dart';
+import '../fs/custom_regions.dart';
 import '../fs/write_plan.dart';
 import '../project/generate_manifest.dart';
 import '../template/catalog.dart';
@@ -70,33 +71,48 @@ abstract class BaseGenerator implements Generator {
 
     for (final write in writes) {
       final absolute = context.fileSystem.resolvePath(write.relativePath);
-      final exists = File(absolute).existsSync();
+      final file = File(absolute);
+      final exists = file.existsSync();
       var mode = write.mode;
+      var content = write.content;
+      final previous = exists ? file.readAsStringSync() : null;
 
       if (context.force && mode == FileWriteMode.create) {
         mode = FileWriteMode.overwrite;
-      } else if (context.sync &&
-          exists &&
-          mode == FileWriteMode.create &&
-          manifest.isUnchanged(write.relativePath)) {
-        mode = FileWriteMode.overwrite;
-      } else if (context.sync &&
-          exists &&
-          mode == FileWriteMode.create &&
-          manifest[write.relativePath] != null &&
-          !manifest.isUnchanged(write.relativePath)) {
-        throw ExecutionException(
-          'Refusing to sync user-edited generated file.',
-          details:
-              '${p.normalize(absolute)}\n'
-              'Use --force to overwrite, or restore the file before --sync.',
+      } else if (context.sync && exists && mode == FileWriteMode.create) {
+        if (manifest.isUnchanged(write.relativePath)) {
+          mode = FileWriteMode.overwrite;
+        } else if (manifest[write.relativePath] != null &&
+            previous != null &&
+            CustomRegions.onlyCustomRegionsDiffer(
+              previous: previous,
+              generated: write.content,
+            )) {
+          // User only edited inside custom regions — safe to sync + reinject.
+          mode = FileWriteMode.overwrite;
+        } else if (manifest[write.relativePath] != null) {
+          throw ExecutionException(
+            'Refusing to sync user-edited generated file.',
+            details:
+                '${p.normalize(absolute)}\n'
+                'Use --force to overwrite, or restore the file before --sync.',
+          );
+        }
+      }
+
+      if (previous != null &&
+          (mode == FileWriteMode.overwrite || context.force || context.sync) &&
+          CustomRegions.extract(write.content).isNotEmpty) {
+        content = CustomRegions.merge(
+          generated: write.content,
+          previous: previous,
         );
       }
 
       effective.add(
         PlannedFileWrite(
           relativePath: write.relativePath,
-          content: write.content,
+          content: content,
           mode: mode,
         ),
       );

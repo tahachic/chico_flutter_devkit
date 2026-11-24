@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:chico_flutter_devkit/chico_flutter_devkit.dart';
 import 'package:chico_flutter_devkit/src/doctor/doctor_service.dart';
 import 'package:chico_flutter_devkit/src/doctor/models.dart';
+import 'package:chico_flutter_devkit/src/project/generate_manifest.dart';
 import 'package:chico_flutter_devkit/src/quality/tool_runner.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
@@ -99,5 +100,41 @@ dependencies:
     final report = await failing.inspect(tempRoot.path);
     expect(report.overall, DoctorStatus.fail);
     expect(report.issues.any((i) => i.code == 'env.flutter_missing'), isTrue);
+  });
+
+  test('inspect warns on generate manifest drift', () async {
+    await writePubspec();
+    await Directory(p.join(tempRoot.path, 'lib')).create();
+    await File(
+      p.join(tempRoot.path, 'lib', 'main.dart'),
+    ).writeAsString('void main() {}');
+    await configService.initProjectConfig(
+      projectRoot: tempRoot.path,
+      config: DevKitConfigDefaults.create(projectName: 'shop_app'),
+    );
+
+    final tracked = File(p.join(tempRoot.path, 'lib', 'tracked.dart'));
+    await tracked.writeAsString('// generated\n');
+    final manifest = GenerateManifest.load(tempRoot.path);
+    manifest.upsert(
+      relativePath: 'lib/tracked.dart',
+      generator: 'model',
+      content: '// generated\n',
+    );
+    await manifest.save();
+
+    await tracked.writeAsString('// generated\n// user changed\n');
+
+    final report = await doctor.inspect(tempRoot.path);
+    expect(
+      report.issues.any((i) => i.code == 'generate.manifest_drift'),
+      isTrue,
+    );
+    expect(
+      report.issues
+          .firstWhere((i) => i.code == 'generate.manifest_drift')
+          .details,
+      'lib/tracked.dart',
+    );
   });
 }

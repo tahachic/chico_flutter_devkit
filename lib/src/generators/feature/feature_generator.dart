@@ -1,5 +1,6 @@
 import '../../config/models.dart';
 import '../../core/exceptions.dart';
+import '../../fs/custom_regions.dart';
 import '../../fs/write_plan.dart';
 import '../context.dart';
 import '../result.dart';
@@ -9,6 +10,7 @@ import '../shared/code_builders.dart';
 import '../shared/field_spec.dart';
 import '../shared/ui_imports.dart';
 import 'api_feature_wire.dart';
+import 'feature_from_spec.dart';
 import 'feature_integration.dart';
 import 'feature_layout.dart';
 
@@ -31,8 +33,14 @@ final class FeatureGenerator extends BaseGenerator {
         details: 'Keep remote enabled (default) and/or pass --local.',
       );
     }
+    final spec = (context.extra['spec'] as String?)?.trim();
     final fromApi = (context.extra['fromApi'] as String?)?.trim();
-    if (fromApi != null && fromApi.isNotEmpty) {
+    if (spec != null && spec.isNotEmpty) {
+      FeatureFromSpec.validate(
+        context: context,
+        featureFields: _fields(context),
+      );
+    } else if (fromApi != null && fromApi.isNotEmpty) {
       if (!includeRemote) {
         throw const InvalidUsageException(
           '--from-api requires a remote datasource.',
@@ -74,7 +82,12 @@ final class FeatureGenerator extends BaseGenerator {
     final useMaterialUi = await UiImports.projectUsesMaterialUi(
       context.projectRoot,
     );
-    final fromApi = (context.extra['fromApi'] as String?)?.trim();
+    final spec = (context.extra['spec'] as String?)?.trim();
+    var fromApi = (context.extra['fromApi'] as String?)?.trim();
+    if (spec != null && spec.isNotEmpty) {
+      // Pre-validated in validate(); generate API client then wire like --from-api.
+      fromApi = await FeatureFromSpec.generateApiClient(context);
+    }
     final apiWire = (fromApi != null && fromApi.isNotEmpty)
         ? ApiFeatureWire.resolve(
             projectRoot: context.projectRoot,
@@ -205,6 +218,34 @@ final class FeatureGenerator extends BaseGenerator {
           content: _entityTest(layout, project: project, fields: fields),
         ),
       );
+      if (apiWire != null) {
+        writes.add(
+          PlannedFileWrite(
+            relativePath:
+                'test/features/${layout.snake}/${layout.snake}_remote_mapping_test.dart',
+            content: _remoteMappingTest(
+              layout,
+              project: project,
+              wire: apiWire,
+              fields: fields,
+            ),
+          ),
+        );
+        writes.add(
+          PlannedFileWrite(
+            relativePath:
+                'test/features/${layout.snake}/${layout.snake}_usecase_test.dart',
+            content: _useCaseLoadTest(
+              layout,
+              project: project,
+              fields: fields,
+              includeCrud: includeCrud,
+              includePagination: includePagination,
+              includeSearch: includeSearch,
+            ),
+          ),
+        );
+      }
     }
 
     final flags = <String>[
@@ -471,7 +512,7 @@ ${methods.join('\n')}
         '''
   Future<List<${layout.pascal}Model>> fetchAll() async {
     final dtos = await api.${wire.listMethod.name}();
-    return dtos.map(_mapDto).toList(growable: false);
+    return dtos.map(mapDto).toList(growable: false);
   }''';
 
     final fetchPage = includePagination
@@ -482,7 +523,7 @@ ${methods.join('\n')}
     int pageSize = 20,
   }) async {
     final dtos = await api.${wire.listMethod.name}(page: page);
-    return dtos.map(_mapDto).toList(growable: false);
+    return dtos.map(mapDto).toList(growable: false);
   }'''
               : '''
   Future<List<${layout.pascal}Model>> fetchPage({
@@ -507,7 +548,7 @@ ${methods.join('\n')}
     final q = query.trim();
     if (q.isEmpty) return fetchAll();
     final dtos = await api.${wire.listMethod.name}(q: q);
-    return dtos.map(_mapDto).toList(growable: false);
+    return dtos.map(mapDto).toList(growable: false);
   }'''
               : '''
   Future<List<${layout.pascal}Model>> search(String query) async {
@@ -535,7 +576,7 @@ ${methods.join('\n')}
       $inputArgs
     );
     final dto = await api.${wire.createMethod!.name}(body: body);
-    return _mapDto(dto);
+    return mapDto(dto);
   }''',
         '''
   Future<${layout.pascal}Model> update(${layout.pascal}Model item) async {
@@ -546,7 +587,7 @@ ${methods.join('\n')}
       $idParam: item.id,
       body: body,
     );
-    return _mapDto(dto);
+    return mapDto(dto);
   }''',
         '''
   Future<void> delete(String id) async {
@@ -575,7 +616,9 @@ class ${layout.pascal}RemoteDataSource {
 
 ${methods.join('\n')}
 
-  ${layout.pascal}Model _mapDto(${wire.itemType} dto) {
+  /// Public for unit tests; wrap custom logic in the custom region.
+  ${layout.pascal}Model mapDto(${wire.itemType} dto) {
+${CustomRegions.stub('remote.map', comment: 'Customize DTO → model mapping')}
     return ${layout.pascal}Model(
       $mapArgs
     );
@@ -1574,6 +1617,132 @@ $args
 $args
     );
     expect(a, b);
+  });
+}
+''';
+  }
+
+  String _remoteMappingTest(
+    FeatureLayout layout, {
+    required String project,
+    required ApiFeatureWirePlan wire,
+    required List<FieldSpec> fields,
+  }) {
+    final jsonEntries = <String>[
+      for (final m in wire.mappings)
+        if (m.dtoFieldName != null) "'${m.dtoFieldName}': 'sample'",
+      // Common OpenAPI required extras (e.g. Product.status enum as string).
+      "'status': 'draft'",
+      "'price': 1.0",
+    ];
+    final expectName = fields.any((f) => f.name == 'name')
+        ? '    expect(model.name, isNotEmpty);\n'
+        : '';
+    return '''
+import 'package:flutter_test/flutter_test.dart';
+
+${wire.clientImport}
+${wire.modelsImport}
+${layout.packageImport(project, layout.remoteDatasource)}
+
+void main() {
+  test('${layout.pascal}RemoteDataSource.mapDto maps ${wire.itemType}', () {
+    final api = ${wire.clientPascal}(baseUrl: 'http://127.0.0.1');
+    final remote = ${layout.pascal}RemoteDataSource(api: api);
+    final dto = ${wire.itemType}.fromJson(<String, dynamic>{
+      ${jsonEntries.join(',\n      ')},
+    });
+    final model = remote.mapDto(dto);
+    expect(model.id, isNotEmpty);
+$expectName  });
+}
+''';
+  }
+
+  String _useCaseLoadTest(
+    FeatureLayout layout, {
+    required String project,
+    required List<FieldSpec> fields,
+    required bool includeCrud,
+    required bool includePagination,
+    required bool includeSearch,
+  }) {
+    final sampleArgs = fields
+        .map((f) {
+          if (f.name == 'id') return "      id: '1',";
+          if (f.type == 'String') {
+            return f.isNullable
+                ? '      ${f.name}: null,'
+                : "      ${f.name}: '${f.name}',";
+          }
+          if (f.type == 'int') return '      ${f.name}: 1,';
+          if (f.type == 'double') return '      ${f.name}: 1.0,';
+          if (f.type == 'bool') return '      ${f.name}: true,';
+          return f.isNullable
+              ? '      ${f.name}: null,'
+              : "      ${f.name}: '',";
+        })
+        .join('\n');
+    final extraMethods = <String>[
+      if (includePagination)
+        '''
+  @override
+  Future<List<${layout.pascal}>> fetchPage({required int page, int pageSize = 20}) async =>
+      fetchAll();''',
+      if (includeSearch)
+        '''
+  @override
+  Future<List<${layout.pascal}>> search(String query) async => fetchAll();''',
+      if (includeCrud) ...[
+        '''
+  @override
+  Future<${layout.pascal}> create(${layout.pascal} item) async => item;''',
+        '''
+  @override
+  Future<${layout.pascal}> update(${layout.pascal} item) async => item;''',
+        '''
+  @override
+  Future<void> delete(String id) async {}''',
+      ],
+    ].join('\n');
+    return '''
+import 'package:flutter_test/flutter_test.dart';
+
+${layout.packageImport(project, layout.entity)}
+${layout.packageImport(project, layout.repositoryContract)}
+${layout.packageImport(project, layout.getUseCase)}
+
+class _Fake${layout.pascal}Repository implements ${layout.pascal}Repository {
+  _Fake${layout.pascal}Repository(this._items, {this.throwOnCall = false});
+  final List<${layout.pascal}> _items;
+  final bool throwOnCall;
+
+  @override
+  Future<List<${layout.pascal}>> fetchAll() async {
+    if (throwOnCall) throw Exception('boom');
+    return _items;
+  }
+$extraMethods
+}
+
+void main() {
+  test('Get${layout.pascal}List returns repository items', () async {
+    final item = ${layout.pascal}(
+$sampleArgs
+    );
+    final useCase = Get${layout.pascal}List(
+      _Fake${layout.pascal}Repository([item]),
+    );
+    final result = await useCase();
+    expect(result, hasLength(1));
+    expect(result.first.id, item.id);
+  });
+
+  test('Get${layout.pascal}List surfaces repository errors', () async {
+    final useCase = Get${layout.pascal}List(
+      _Fake${layout.pascal}Repository(const [], throwOnCall: true),
+    );
+    expect(useCase(), throwsA(isA<Exception>()));
   });
 }
 ''';

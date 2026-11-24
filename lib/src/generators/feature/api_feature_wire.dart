@@ -4,6 +4,7 @@ import 'package:path/path.dart' as p;
 
 import '../../core/exceptions.dart';
 import '../../naming/name_converter.dart';
+import '../../openapi/models.dart';
 import '../shared/field_spec.dart';
 
 /// Resolves a generated OpenAPI client and plans feature remote wiring.
@@ -11,6 +12,134 @@ import '../shared/field_spec.dart';
 /// Fail-closed: missing client, no list operation, or unmappable required
 /// feature fields throw [InvalidUsageException] before any feature writes.
 abstract final class ApiFeatureWire {
+  /// Pre-validate wiring against a parsed OpenAPI document (no disk client yet).
+  static void validateFromDocument({
+    required OpenApiDocument document,
+    required String apiName,
+    required String featureSnake,
+    required List<FieldSpec> featureFields,
+    required bool needCrud,
+    required bool needPagination,
+    required bool needSearch,
+    required String projectRoot,
+  }) {
+    final methods = document.operations.map(_methodFromOperation).toList();
+    final listMethod = _pickListMethod(methods, featureSnake: featureSnake);
+    if (listMethod == null) {
+      throw const InvalidUsageException(
+        'No list operation found in the OpenAPI specification.',
+        details:
+            'Need a GET (or similar) operation returning an array of objects '
+            '(e.g. listProducts → List<Product>).',
+      );
+    }
+    final itemType = listMethod.listItemType!;
+    final schema =
+        document.schemas[itemType] ??
+        document.schemas.values.cast<OpenApiSchema?>().firstWhere(
+          (s) =>
+              s != null && NameConverter.parse(s.name).pascalCase == itemType,
+          orElse: () => null,
+        );
+    if (schema == null || schema.kind != OpenApiSchemaKind.object) {
+      throw InvalidUsageException(
+        'Could not resolve object schema for list item type $itemType.',
+      );
+    }
+    final dtoFields = {
+      for (final f in schema.fields)
+        f.name: ApiDtoField(name: f.name, dartType: f.dartType),
+    };
+    _assertFieldMappings(
+      featureFields: featureFields,
+      dtoFields: dtoFields,
+      itemType: itemType,
+    );
+
+    if (needCrud) {
+      final createMethod = _pickCreateMethod(methods, itemType: itemType);
+      final updateMethod = _pickUpdateMethod(methods, itemType: itemType);
+      final deleteMethod = _pickDeleteMethod(methods);
+      if (createMethod == null ||
+          updateMethod == null ||
+          deleteMethod == null) {
+        throw InvalidUsageException(
+          'OpenAPI spec is missing CRUD operations required by --crud.',
+          details:
+              'Need create, update/replace, and delete for $itemType.\n'
+              'Found create=${createMethod?.name}, update=${updateMethod?.name}, '
+              'delete=${deleteMethod?.name}.',
+        );
+      }
+    }
+    // needPagination / needSearch: local fallbacks allowed (same as resolve).
+  }
+
+  static ApiMethodInfo _methodFromOperation(OpenApiOperation op) {
+    final returnType = op.successResponseType ?? 'void';
+    String? listItem;
+    final listMatch = RegExp(r'^List<(\w+)>$').firstMatch(returnType);
+    if (listMatch != null) listItem = listMatch.group(1);
+    final optionalParams = <String>[];
+    final requiredParams = <String>[];
+    for (final parameter in op.parameters) {
+      if (parameter.required) {
+        requiredParams.add(parameter.name);
+      } else {
+        optionalParams.add(parameter.name);
+      }
+    }
+    if (op.requestBodyType != null) {
+      requiredParams.add('body');
+    }
+    return ApiMethodInfo(
+      name: op.methodName,
+      returnType: returnType,
+      listItemType: listItem,
+      optionalParams: optionalParams,
+      requiredParams: requiredParams,
+      bodyType: op.requestBodyType,
+    );
+  }
+
+  static void _assertFieldMappings({
+    required List<FieldSpec> featureFields,
+    required Map<String, ApiDtoField> dtoFields,
+    required String itemType,
+  }) {
+    var mapped = 0;
+    for (final field in featureFields) {
+      final dto = dtoFields[field.name];
+      if (dto == null) {
+        if (field.isNullable) continue;
+        throw InvalidUsageException(
+          'Required feature field "${field.name}" is not on API model $itemType.',
+          details:
+              'API fields: ${dtoFields.keys.join(', ')}.\n'
+              'Pass --fields that intersect the API model, or extend the OpenAPI schema.',
+        );
+      }
+      final expr = _mapExpression(
+        featureField: field,
+        dtoFieldName: dto.name,
+        dtoDartType: dto.dartType,
+      );
+      if (expr == null) {
+        throw InvalidUsageException(
+          'Cannot map API field ${dto.name} (${dto.dartType}) '
+          'to feature field ${field.name} (${field.dartType}).',
+        );
+      }
+      mapped++;
+    }
+    if (mapped == 0) {
+      throw const InvalidUsageException(
+        'No mappable fields between the feature and the API model.',
+        details: 'At least one shared field name is required.',
+      );
+    }
+  }
+
   /// Inspects `lib/api/<apiName>/generated/` and builds a wire plan.
   static ApiFeatureWirePlan resolve({
     required String projectRoot,
@@ -69,53 +198,36 @@ abstract final class ApiFeatureWire {
       );
     }
 
+    _assertFieldMappings(
+      featureFields: featureFields,
+      dtoFields: dtoFields,
+      itemType: itemType,
+    );
     final mappings = <ApiFieldMapping>[];
     for (final field in featureFields) {
       final dto = dtoFields[field.name];
       if (dto == null) {
-        if (field.isNullable) {
-          mappings.add(
-            ApiFieldMapping(
-              featureField: field,
-              dtoFieldName: null,
-              dtoDartType: null,
-              expression: 'null',
-            ),
-          );
-          continue;
-        }
-        throw InvalidUsageException(
-          'Required feature field "${field.name}" is not on API model $itemType.',
-          details:
-              'API fields: ${dtoFields.keys.join(', ')}.\n'
-              'Pass --fields that intersect the API model, or extend the OpenAPI schema.',
+        mappings.add(
+          ApiFieldMapping(
+            featureField: field,
+            dtoFieldName: null,
+            dtoDartType: null,
+            expression: 'null',
+          ),
         );
-      }
-      final expr = _mapExpression(
-        featureField: field,
-        dtoFieldName: dto.name,
-        dtoDartType: dto.dartType,
-      );
-      if (expr == null) {
-        throw InvalidUsageException(
-          'Cannot map API field ${dto.name} (${dto.dartType}) '
-          'to feature field ${field.name} (${field.dartType}).',
-        );
+        continue;
       }
       mappings.add(
         ApiFieldMapping(
           featureField: field,
           dtoFieldName: dto.name,
           dtoDartType: dto.dartType,
-          expression: expr,
+          expression: _mapExpression(
+            featureField: field,
+            dtoFieldName: dto.name,
+            dtoDartType: dto.dartType,
+          )!,
         ),
-      );
-    }
-
-    if (!mappings.any((m) => m.dtoFieldName != null)) {
-      throw const InvalidUsageException(
-        'No mappable fields between the feature and the API model.',
-        details: 'At least one shared field name is required.',
       );
     }
 

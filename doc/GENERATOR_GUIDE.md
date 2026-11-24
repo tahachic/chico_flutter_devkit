@@ -31,12 +31,27 @@ devkit generate feature catalog --architecture layered --state riverpod --no-tes
 | `--remote` / `--no-remote` | remote datasource (default on) |
 | `--fields` | entity/model fields |
 | `--from-api <name>` | Wire remote datasource to `lib/api/<name>/generated` (fail-closed) |
+| `--spec <path>` | Generate API client from OpenAPI then wire the feature (one command) |
+| `--api-name <name>` | Override API client folder when using `--spec` (default: feature snake) |
 
 Open **Home → feature name** or `/features/<name>` after generate (go_router
 `context.go` or Navigator `pushNamed`, matching create `--routing`). Demo data
 is not production CRUD — swap the datasource for your API when ready.
 
-### Wire OpenAPI client into a feature
+### OpenAPI → runnable screen (`--spec`)
+
+```bash
+devkit generate feature products --spec openapi/shop_api.yaml --pagination --search
+devkit generate feature products --spec openapi/shop_api.yaml --api-name shop --crud
+```
+
+`--spec` and `--from-api` are mutually exclusive. Preflight parses OpenAPI and
+validates a list op + field mapping **before any writes**. On success: write the
+API client under `lib/api/<name>/generated`, then the wired feature + DI + routes.
+API-wired features also emit remote mapping + use-case load/error unit tests
+(when tests are enabled).
+
+### Wire an existing client (`--from-api`)
 
 ```bash
 devkit generate api shop --spec openapi/shop_api.yaml
@@ -46,8 +61,14 @@ devkit generate feature products --from-api shop --pagination --search
 
 Fail-closed when the client is missing, no `Future<List<…>>` list method exists,
 or a required feature field cannot be mapped from the API model. Shared flags:
-`--dry-run`, `--force`, `--sync` (refresh unchanged manifest files only).
+`--dry-run`, `--force`, `--sync` (refresh unchanged manifest files; preserves
+`// <devkit:custom id="…">` regions).
 
+### Custom regions
+
+Generated remote datasources (and auth UI/router stubs) include empty custom
+regions. On `--sync` / regenerate, matching region bodies are re-injected.
+Edits **outside** regions still refuse `--sync` (use `--force`).
 ### Layout (clean / feature-first)
 
 ```text
@@ -166,12 +187,16 @@ devkit generate extension StringX --on String
 ```bash
 devkit generate test Product --kind unit --target model
 devkit generate test ProductCard --kind widget --target widget
+devkit generate test products --kind unit --target feature
 ```
 
 | Flag | Values |
 |------|--------|
 | `--kind` | `unit` (default), `widget` |
-| `--target` | logical folder/type hint (`model`, `service`, …) |
+| `--target` | logical folder/type hint (`model`, `service`, `feature`, …) |
+
+`--target feature` fails closed if the feature is missing; refreshes
+feature-oriented unit stubs when it exists.
 
 ---
 
@@ -179,6 +204,7 @@ devkit generate test ProductCard --kind widget --target widget
 
 ```bash
 devkit generate auth session
+devkit generate auth session --ui
 ```
 
 Creates:
@@ -188,8 +214,16 @@ Creates:
 - `lib/core/config/app_config.dart` — flavors via `--dart-define=ENV=dev|staging|prod`
 - `lib/core/di/auth_registrations.dart` — get_it registrations (when DI is get_it)
 
-Tokens are stubs until you fill credentials. Only the `session` pack is supported.
+With `--ui`:
 
+- `lib/features/auth/presentation/pages/login_page.dart` — stub email/password
+  (any non-empty password → `signInStub`)
+- Route `/login` + guard: unauthenticated `/features/*` → `/login`
+- Hooks `registerAuth` into get_it injector when present
+
+Without `--ui`, behavior matches 1.1.0 (token store + AppConfig only).
+Fail-closed when router/injector DevKit anchors are missing.
+Tokens are stubs until you fill credentials. Only the `session` pack is supported.
 ---
 
 ## `api` (OpenAPI)

@@ -2,6 +2,50 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.2.0
+
+### Added
+
+- **`generate feature --spec`** — OpenAPI → API client + wired feature in one
+  command (`--api-name`; exclusive with `--from-api`; fail-closed preflight)
+- **Custom regions** preserved on `--sync`; doctor `generate.manifest_drift`
+- **`generate auth session --ui`** — login page + `/features/*` route guard
+- API-wired features emit remote mapping + use-case load/error unit tests;
+  `generate test <name> --target feature` refreshes feature-oriented stubs
+
+### Docs
+
+- GENERATOR_GUIDE / COOKBOOK / MANUAL_RELEASE_TEST updated for 1.2.0 paths
+
+## 1.2.0-dev.4
+
+### Added
+
+- API-wired features emit **remote mapping** + **use-case load/error** unit tests
+- `generate test <feature> --kind unit --target feature` refreshes feature stubs
+
+## 1.2.0-dev.3
+
+### Added
+
+- **`generate auth session --ui`** — login page, `/login` route, and
+  `/features/*` redirect guard (get_it `registerAuth` hook)
+
+## 1.2.0-dev.2
+
+### Added
+
+- **Custom regions** (`// <devkit:custom id="…">`) preserved across `--sync`
+- Doctor warning `generate.manifest_drift` when manifest hashes diverge
+
+## 1.2.0-dev.1
+
+### Added
+
+- **`generate feature --spec`** — OpenAPI → API client + wired remote DS + DI +
+  page in one command (`--api-name` override; mutually exclusive with `--from-api`)
+- Preflight `ApiFeatureWire.validateFromDocument` fails closed before any writes
+
 ## 1.1.0
 
 ### Added
