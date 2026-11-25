@@ -22,10 +22,7 @@ void main() {
     homeDir = await Directory.systemTemp.createTemp('devkit_adopt_home_');
     configService = ConfigService(homeOverride: homeDir.path);
     flutterCli = FakeFlutterCli();
-    adopt = AdoptService(
-      configService: configService,
-      flutterCli: flutterCli,
-    );
+    adopt = AdoptService(configService: configService, flutterCli: flutterCli);
   });
 
   tearDown(() async {
@@ -88,10 +85,7 @@ void main() {
 
   test('adopt uses material_ui Home when Flutter ≥ 3.47', () async {
     flutterCli = FakeFlutterCli(materialUiSupported: true);
-    adopt = AdoptService(
-      configService: configService,
-      flutterCli: flutterCli,
-    );
+    adopt = AdoptService(configService: configService, flutterCli: flutterCli);
     await writeFlutterPubspec(tempRoot.path, name: 'legacy_app');
     await Directory(p.join(tempRoot.path, 'lib')).create();
 
@@ -116,7 +110,9 @@ void main() {
     ).readAsStringSync();
     expect(home, contains("package:material_ui/material_ui.dart"));
     expect(home, isNot(contains("package:flutter/material.dart")));
-    final pubspec = File(p.join(tempRoot.path, 'pubspec.yaml')).readAsStringSync();
+    final pubspec = File(
+      p.join(tempRoot.path, 'pubspec.yaml'),
+    ).readAsStringSync();
     expect(pubspec, contains('material_ui:'));
     expect(pubspec, contains('cupertino_ui:'));
   });

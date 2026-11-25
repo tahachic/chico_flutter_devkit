@@ -31,10 +31,8 @@ final class AdoptResult {
 
 /// Brownfield adopt: config + DevKit anchors without inventing a parallel app.
 final class AdoptService {
-  AdoptService({
-    required this.configService,
-    FlutterCli? flutterCli,
-  }) : flutterCli = flutterCli ?? ProcessFlutterCli();
+  AdoptService({required this.configService, FlutterCli? flutterCli})
+    : flutterCli = flutterCli ?? ProcessFlutterCli();
 
   final ConfigService configService;
   final FlutterCli flutterCli;
