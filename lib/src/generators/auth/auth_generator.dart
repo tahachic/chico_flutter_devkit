@@ -268,9 +268,7 @@ ${CustomRegions.stub('router.extra', comment: 'Extra GoRouter options')}
     required DependencyInjection di,
     required Routing routing,
   }) {
-    final materialImport = useMaterialUi
-        ? "import 'package:material_ui/material.dart';"
-        : "import 'package:flutter/material.dart';";
+    final materialImport = UiImports.materialImport(useMaterialUi: useMaterialUi);
     final authResolve = switch (di) {
       DependencyInjection.getIt => 'getIt<SessionAuth>()',
       DependencyInjection.manual => 'SessionAuth(SessionTokenStore())',

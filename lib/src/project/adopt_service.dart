@@ -10,7 +10,9 @@ import '../core/exceptions.dart';
 import '../fs/safe_file_system.dart';
 import '../fs/write_plan.dart';
 import '../generators/feature/feature_integration.dart';
+import '../generators/shared/ui_imports.dart';
 import '../pubspec/pubspec_editor.dart';
+import 'flutter_cli.dart';
 
 /// Result of adopting an existing Flutter app into the DevKit matrix.
 final class AdoptResult {
@@ -29,9 +31,13 @@ final class AdoptResult {
 
 /// Brownfield adopt: config + DevKit anchors without inventing a parallel app.
 final class AdoptService {
-  AdoptService({required this.configService});
+  AdoptService({
+    required this.configService,
+    FlutterCli? flutterCli,
+  }) : flutterCli = flutterCli ?? ProcessFlutterCli();
 
   final ConfigService configService;
+  final FlutterCli flutterCli;
 
   Future<AdoptResult> adopt({
     required String projectRoot,
@@ -97,18 +103,31 @@ final class AdoptService {
       ).features.copyWith(defaultArchitecture: architecture),
     );
 
+    final useMaterialUi = await flutterCli.supportsMaterialUiPackage();
+
     if (!dryRun) {
       await configService.initProjectConfig(
         projectRoot: root,
         config: config,
         force: forceConfig,
       );
+      final pubspec = PubspecEditor.forProject(root);
       await _ensureStackDependencies(
-        PubspecEditor.forProject(root),
+        pubspec,
         routing: routing,
         state: state,
         di: di,
       );
+      if (useMaterialUi) {
+        await pubspec.ensureDependency(
+          packageName: UiImports.materialUiPackage,
+          constraint: UiImports.materialUiConstraint,
+        );
+        await pubspec.ensureDependency(
+          packageName: UiImports.cupertinoUiPackage,
+          constraint: UiImports.cupertinoUiConstraint,
+        );
+      }
     }
 
     final writes = <PlannedFileWrite>[
@@ -120,6 +139,7 @@ final class AdoptService {
           content: FeatureIntegration.freshMaterialHome(
             projectTitle: _pascalize(name),
             routing: routing,
+            useMaterialUi: useMaterialUi,
           ),
         ),
     ];

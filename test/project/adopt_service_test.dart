@@ -4,6 +4,7 @@ import 'package:chico_flutter_devkit/chico_flutter_devkit.dart';
 import 'package:chico_flutter_devkit/src/generators/feature/feature_generator.dart';
 import 'package:chico_flutter_devkit/src/generators/feature/feature_integration.dart';
 import 'package:chico_flutter_devkit/src/project/adopt_service.dart';
+import 'package:chico_flutter_devkit/src/project/flutter_cli.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
@@ -13,13 +14,18 @@ void main() {
   late Directory tempRoot;
   late Directory homeDir;
   late ConfigService configService;
+  late FakeFlutterCli flutterCli;
   late AdoptService adopt;
 
   setUp(() async {
     tempRoot = await Directory.systemTemp.createTemp('devkit_adopt_');
     homeDir = await Directory.systemTemp.createTemp('devkit_adopt_home_');
     configService = ConfigService(homeOverride: homeDir.path);
-    adopt = AdoptService(configService: configService);
+    flutterCli = FakeFlutterCli();
+    adopt = AdoptService(
+      configService: configService,
+      flutterCli: flutterCli,
+    );
   });
 
   tearDown(() async {
@@ -64,6 +70,55 @@ void main() {
       ).readAsStringSync(),
       contains(FeatureIntegration.homeBegin),
     );
+    expect(
+      File(
+        p.join(
+          tempRoot.path,
+          'lib',
+          'features',
+          'home',
+          'presentation',
+          'pages',
+          'home_page.dart',
+        ),
+      ).readAsStringSync(),
+      contains("package:flutter/material.dart"),
+    );
+  });
+
+  test('adopt uses material_ui Home when Flutter ≥ 3.47', () async {
+    flutterCli = FakeFlutterCli(materialUiSupported: true);
+    adopt = AdoptService(
+      configService: configService,
+      flutterCli: flutterCli,
+    );
+    await writeFlutterPubspec(tempRoot.path, name: 'legacy_app');
+    await Directory(p.join(tempRoot.path, 'lib')).create();
+
+    await adopt.adopt(
+      projectRoot: tempRoot.path,
+      architecture: Architecture.clean,
+      state: StateManagement.bloc,
+      routing: Routing.goRouter,
+      di: DependencyInjection.getIt,
+    );
+
+    final home = File(
+      p.join(
+        tempRoot.path,
+        'lib',
+        'features',
+        'home',
+        'presentation',
+        'pages',
+        'home_page.dart',
+      ),
+    ).readAsStringSync();
+    expect(home, contains("package:material_ui/material_ui.dart"));
+    expect(home, isNot(contains("package:flutter/material.dart")));
+    final pubspec = File(p.join(tempRoot.path, 'pubspec.yaml')).readAsStringSync();
+    expect(pubspec, contains('material_ui:'));
+    expect(pubspec, contains('cupertino_ui:'));
   });
 
   test('adopt refuses Home without markers', () async {

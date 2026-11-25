@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.3.1
+
+### Fixed
+
+- Auth `--ui` login page import uses `package:material_ui/material_ui.dart`
+  (was `material.dart`, which does not exist)
+- `devkit adopt` adds `material_ui` / `cupertino_ui` and writes Home with the
+  correct import when Flutter ≥ 3.47 (avoids `--fatal-infos` deprecation)
+
 ## 1.3.0
 
 ### Added

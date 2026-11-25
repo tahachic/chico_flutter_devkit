@@ -91,7 +91,10 @@ Future<void> configureDependencies() async {
       ),
     );
     expect(login.existsSync(), isTrue);
-    expect(login.readAsStringSync(), contains('signInStub'));
+    final loginSource = login.readAsStringSync();
+    expect(loginSource, contains('signInStub'));
+    expect(loginSource, contains("package:flutter/material.dart"));
+    expect(loginSource, isNot(contains("package:material_ui/material.dart")));
 
     final router = File(
       p.join(tempRoot.path, 'lib', 'core', 'routing', 'app_router.dart'),
@@ -104,6 +107,43 @@ Future<void> configureDependencies() async {
       p.join(tempRoot.path, 'lib', 'core', 'di', 'injector.dart'),
     ).readAsStringSync();
     expect(injector, contains('registerAuth(getIt);'));
+  });
+
+  test('auth --ui uses material_ui import when package is present', () async {
+    await writeFlutterPubspec(tempRoot.path, name: 'shop_app');
+    final pubspec = File(p.join(tempRoot.path, 'pubspec.yaml'));
+    final raw = pubspec.readAsStringSync().replaceFirst(
+      'dependencies:\n  flutter:',
+      'dependencies:\n  material_ui: ^1.0.0\n  flutter:',
+    );
+    await pubspec.writeAsString(raw);
+    await seedRouterAndInjector();
+
+    final runner = GeneratorRunner(
+      registry: GeneratorRegistry(generators: [AuthGenerator()]),
+      configService: configService,
+    );
+    await runner.run(
+      projectRoot: tempRoot.path,
+      generatorName: 'auth',
+      targetName: 'session',
+      extra: {'ui': true},
+    );
+
+    final login = File(
+      p.join(
+        tempRoot.path,
+        'lib',
+        'features',
+        'auth',
+        'presentation',
+        'pages',
+        'login_page.dart',
+      ),
+    ).readAsStringSync();
+    expect(login, contains("package:material_ui/material_ui.dart"));
+    expect(login, isNot(contains("package:material_ui/material.dart")));
+    expect(login, isNot(contains("package:flutter/material.dart")));
   });
 
   test('auth session without --ui does not write login page', () async {
