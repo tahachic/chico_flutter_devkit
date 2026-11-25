@@ -410,6 +410,93 @@ void main() {
   );
 
   test(
+    'adopt brownfield then generate feature analyze clean',
+    () async {
+      final root = await Directory.systemTemp.createTemp('devkit_e2e_adopt_');
+      addTearDown(() async {
+        if (root.existsSync()) await root.delete(recursive: true);
+      });
+
+      final pkg = Directory.current.path;
+      final project = p.join(root.path, 'brown_app');
+      final flutterCreate = await Process.run(
+        'flutter',
+        [
+          'create',
+          '--project-name',
+          'brown_app',
+          '--platforms',
+          'android,ios,web',
+          project,
+        ],
+        workingDirectory: root.path,
+        runInShell: true,
+      );
+      expect(
+        flutterCreate.exitCode,
+        0,
+        reason: '${flutterCreate.stdout}\n${flutterCreate.stderr}',
+      );
+
+      Future<ProcessResult> devkit(List<String> args) {
+        return Process.run(
+          'dart',
+          ['run', p.join(pkg, 'bin', 'devkit.dart'), ...args],
+          workingDirectory: project,
+          runInShell: true,
+        );
+      }
+
+      final adopt = await devkit([
+        'adopt',
+        '--architecture',
+        'clean',
+        '--state',
+        'bloc',
+        '--routing',
+        'go_router',
+        '--di',
+        'get_it',
+      ]);
+      expect(adopt.exitCode, 0, reason: '${adopt.stdout}\n${adopt.stderr}');
+
+      final pubGet = await Process.run(
+        'flutter',
+        ['pub', 'get'],
+        workingDirectory: project,
+        runInShell: true,
+      );
+      expect(pubGet.exitCode, 0, reason: '${pubGet.stdout}\n${pubGet.stderr}');
+
+      final feature = await devkit([
+        'generate',
+        'feature',
+        'products',
+        '--no-tests',
+      ]);
+      expect(
+        feature.exitCode,
+        0,
+        reason: '${feature.stdout}\n${feature.stderr}',
+      );
+
+      final analyze = await Process.run(
+        'flutter',
+        ['analyze', '--fatal-infos'],
+        workingDirectory: project,
+        runInShell: true,
+      );
+      expect(
+        analyze.exitCode,
+        0,
+        reason: '${analyze.stdout}\n${analyze.stderr}',
+      );
+    },
+    skip: flutter ? false : 'Flutter SDK not available on PATH',
+    timeout: const Timeout(Duration(minutes: 12)),
+  );
+
+  test(
     'feature --spec + custom region sync + auth --ui + flutter test',
     () async {
       final root = await Directory.systemTemp.createTemp('devkit_e2e_120_');

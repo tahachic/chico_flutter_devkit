@@ -178,4 +178,66 @@ abstract final class AppRouter {
       throwsA(isA<InvalidUsageException>()),
     );
   });
+
+  test('auth --ui refuses navigator routing', () async {
+    await configService.initProjectConfig(
+      projectRoot: tempRoot.path,
+      config: DevKitConfigDefaults.create(projectName: 'shop_app').copyWith(
+        flutter: DevKitConfigDefaults.create(
+          projectName: 'shop_app',
+        ).flutter.copyWith(routing: Routing.navigator),
+      ),
+      force: true,
+    );
+    final runner = GeneratorRunner(
+      registry: GeneratorRegistry(generators: [AuthGenerator()]),
+      configService: configService,
+    );
+    await expectLater(
+      () => runner.run(
+        projectRoot: tempRoot.path,
+        generatorName: 'auth',
+        targetName: 'session',
+        extra: {'ui': true},
+      ),
+      throwsA(
+        isA<InvalidUsageException>().having(
+          (e) => e.message,
+          'message',
+          contains('go_router'),
+        ),
+      ),
+    );
+  });
+
+  test('auth --ui refuses non-get_it DI', () async {
+    await configService.initProjectConfig(
+      projectRoot: tempRoot.path,
+      config: DevKitConfigDefaults.create(projectName: 'shop_app').copyWith(
+        flutter: DevKitConfigDefaults.create(
+          projectName: 'shop_app',
+        ).flutter.copyWith(dependencyInjection: DependencyInjection.riverpod),
+      ),
+      force: true,
+    );
+    final runner = GeneratorRunner(
+      registry: GeneratorRegistry(generators: [AuthGenerator()]),
+      configService: configService,
+    );
+    await expectLater(
+      () => runner.run(
+        projectRoot: tempRoot.path,
+        generatorName: 'auth',
+        targetName: 'session',
+        extra: {'ui': true},
+      ),
+      throwsA(
+        isA<InvalidUsageException>().having(
+          (e) => e.message,
+          'message',
+          contains('get_it'),
+        ),
+      ),
+    );
+  });
 }

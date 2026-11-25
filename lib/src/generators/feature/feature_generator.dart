@@ -1111,11 +1111,9 @@ class ${layout.pascal}Provider extends ChangeNotifier {
     required bool includePagination,
     ApiFeatureWirePlan? apiWire,
   }) {
-    final hints = <String>[
-      if (includeSearch) '// Search UI hook enabled.',
-      if (includeFilters) '// Filters UI hook enabled.',
-      if (includePagination) '// Pagination UI hook enabled.',
-    ].map((line) => '    $line').join('\n');
+    final filterHint = includeFilters
+        ? '    // Filters: add chip/filter UI when your domain is ready.\n'
+        : '';
     final title = _titleExpr(fields);
     final subtitle = _subtitleExpr(fields);
     final stateDir = layout.stateDir(state).split('/').last;
@@ -1145,36 +1143,42 @@ class ${layout.pascal}Provider extends ChangeNotifier {
         useChico: useChico,
         useMaterialUi: useMaterialUi,
         context: context,
-        hints: hints,
+        hints: filterHint,
         title: title,
         subtitle: subtitle,
         stateDir: stateDir,
         dataImports: dataImports,
         graph: graph,
+        includeSearch: includeSearch,
+        includePagination: includePagination,
       ),
       StateManagement.cubit => _cubitPage(
         layout: layout,
         useChico: useChico,
         useMaterialUi: useMaterialUi,
         context: context,
-        hints: hints,
+        hints: filterHint,
         title: title,
         subtitle: subtitle,
         stateDir: stateDir,
         dataImports: dataImports,
         graph: graph,
+        includeSearch: includeSearch,
+        includePagination: includePagination,
       ),
       StateManagement.provider => _providerPage(
         layout: layout,
         useChico: useChico,
         useMaterialUi: useMaterialUi,
         context: context,
-        hints: hints,
+        hints: filterHint,
         title: title,
         subtitle: subtitle,
         stateDir: stateDir,
         dataImports: dataImports,
         graph: graph,
+        includeSearch: includeSearch,
+        includePagination: includePagination,
       ),
       StateManagement.riverpod => _riverpodPage(
         layout: layout,
@@ -1182,14 +1186,54 @@ class ${layout.pascal}Provider extends ChangeNotifier {
         useChico: useChico,
         useMaterialUi: useMaterialUi,
         context: context,
-        hints: hints,
+        hints: filterHint,
         title: title,
         subtitle: subtitle,
         stateDir: stateDir,
         tileImport: tileImport,
+        includeSearch: includeSearch,
+        includePagination: includePagination,
       ),
     };
   }
+
+  String _searchField() => '''
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                child: TextField(
+                  decoration: const InputDecoration(
+                    hintText: 'Search…',
+                    border: OutlineInputBorder(),
+                    isDense: true,
+                    prefixIcon: Icon(Icons.search),
+                  ),
+                  onChanged: (query) {
+                    // Wire to repository.search(query) / bloc event when ready.
+                  },
+                ),
+              ),''';
+
+  String _paginationBar() => '''
+              Padding(
+                padding: const EdgeInsets.all(8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    TextButton(
+                      onPressed: () {
+                        // Wire to fetchPage(page: page - 1) when ready.
+                      },
+                      child: const Text('Previous'),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        // Wire to fetchPage(page: page + 1) when ready.
+                      },
+                      child: const Text('Next'),
+                    ),
+                  ],
+                ),
+              ),''';
 
   String _scaffold({
     required bool useChico,
@@ -1242,18 +1286,36 @@ $body
     required String stateDir,
     required String dataImports,
     required String graph,
+    required bool includeSearch,
+    required bool includePagination,
   }) {
     final onPressed = useChico ? 'onPressed' : 'onTap';
+    final chromeTop = includeSearch ? _searchField() : '';
+    final chromeBottom = includePagination ? _paginationBar() : '';
     final listBody = useChico
         ? '''
       return ChicoScaffold(
         bar: const ChicoBar(title: '${layout.pascal}'),
-        body: ChicoPage(child: child),
+        body: ChicoPage(
+          child: Column(
+            children: [
+$chromeTop
+              Expanded(child: child),
+$chromeBottom
+            ],
+          ),
+        ),
       );'''
         : '''
       return Scaffold(
         appBar: AppBar(title: const Text('${layout.pascal}')),
-        body: child,
+        body: Column(
+          children: [
+$chromeTop
+            Expanded(child: child),
+$chromeBottom
+          ],
+        ),
       );''';
 
     final build =
@@ -1317,18 +1379,36 @@ import '../$stateDir/${layout.snake}_state.dart';
     required String stateDir,
     required String dataImports,
     required String graph,
+    required bool includeSearch,
+    required bool includePagination,
   }) {
     final onPressed = useChico ? 'onPressed' : 'onTap';
+    final chromeTop = includeSearch ? _searchField() : '';
+    final chromeBottom = includePagination ? _paginationBar() : '';
     final listBody = useChico
         ? '''
       return ChicoScaffold(
         bar: const ChicoBar(title: '${layout.pascal}'),
-        body: ChicoPage(child: child),
+        body: ChicoPage(
+          child: Column(
+            children: [
+$chromeTop
+              Expanded(child: child),
+$chromeBottom
+            ],
+          ),
+        ),
       );'''
         : '''
       return Scaffold(
         appBar: AppBar(title: const Text('${layout.pascal}')),
-        body: child,
+        body: Column(
+          children: [
+$chromeTop
+            Expanded(child: child),
+$chromeBottom
+          ],
+        ),
       );''';
 
     final build =
@@ -1390,18 +1470,36 @@ import '../$stateDir/${layout.snake}_state.dart';
     required String stateDir,
     required String dataImports,
     required String graph,
+    required bool includeSearch,
+    required bool includePagination,
   }) {
     final onPressed = useChico ? 'onPressed' : 'onTap';
+    final chromeTop = includeSearch ? _searchField() : '';
+    final chromeBottom = includePagination ? _paginationBar() : '';
     final shell = useChico
         ? '''
         return ChicoScaffold(
           bar: const ChicoBar(title: '${layout.pascal}'),
-          body: ChicoPage(child: child),
+          body: ChicoPage(
+            child: Column(
+              children: [
+$chromeTop
+                Expanded(child: child),
+$chromeBottom
+              ],
+            ),
+          ),
         );'''
         : '''
         return Scaffold(
           appBar: AppBar(title: const Text('${layout.pascal}')),
-          body: child,
+          body: Column(
+            children: [
+$chromeTop
+              Expanded(child: child),
+$chromeBottom
+            ],
+          ),
         );''';
 
     final build =
@@ -1463,18 +1561,36 @@ import '../$stateDir/${layout.snake}_provider.dart';
     required String subtitle,
     required String stateDir,
     required String tileImport,
+    required bool includeSearch,
+    required bool includePagination,
   }) {
     final onPressed = useChico ? 'onPressed' : 'onTap';
+    final chromeTop = includeSearch ? _searchField() : '';
+    final chromeBottom = includePagination ? _paginationBar() : '';
     final shell = useChico
         ? '''
     return ChicoScaffold(
       bar: const ChicoBar(title: '${layout.pascal}'),
-      body: ChicoPage(child: child),
+      body: ChicoPage(
+        child: Column(
+          children: [
+$chromeTop
+            Expanded(child: child),
+$chromeBottom
+          ],
+        ),
+      ),
     );'''
         : '''
     return Scaffold(
       appBar: AppBar(title: const Text('${layout.pascal}')),
-      body: child,
+      body: Column(
+        children: [
+$chromeTop
+          Expanded(child: child),
+$chromeBottom
+        ],
+      ),
     );''';
 
     final uiImports = useChico

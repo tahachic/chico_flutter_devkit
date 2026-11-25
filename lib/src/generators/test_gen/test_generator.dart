@@ -5,6 +5,7 @@ import 'package:path/path.dart' as p;
 import '../../core/exceptions.dart';
 import '../../fs/write_plan.dart';
 import '../context.dart';
+import '../feature/feature_layout.dart';
 import '../result.dart';
 import '../runner.dart';
 import '../shared/generator_options.dart';
@@ -31,21 +32,16 @@ final class TestGenerator extends BaseGenerator {
     final target =
         (context.extra['target'] as String?)?.trim().toLowerCase() ?? 'generic';
     if (target == 'feature') {
-      final snake = context.targetName.snakeCase;
-      final entityPath = p.join(
-        context.projectRoot,
-        'lib',
-        'features',
-        snake,
-        'domain',
-        'entities',
-        '$snake.dart',
+      final layout = FeatureLayout(
+        architecture: context.config.project.architecture,
+        name: context.targetName,
       );
+      final entityPath = p.join(context.projectRoot, layout.entity);
       if (!File(entityPath).existsSync()) {
         throw InvalidUsageException(
-          'Feature "$snake" was not found.',
+          'Feature "${layout.snake}" was not found.',
           details:
-              'Expected lib/features/$snake/domain/entities/$snake.dart\n'
+              'Expected ${layout.entity}\n'
               'Generate the feature first.',
         );
       }

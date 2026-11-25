@@ -70,6 +70,7 @@ final class ProjectFactory {
       name: name,
       organization: options.organization,
       outputDirectory: projectPath,
+      platforms: options.platforms,
     );
 
     final materialApp =
@@ -98,6 +99,7 @@ final class ProjectFactory {
       outputDirectory: options.outputDirectory,
       apiBaseUrl: options.apiBaseUrl,
       useMaterialUi: useMaterialUi,
+      platforms: options.platforms,
     );
 
     final fs = SafeFileSystem(projectRoot: projectPath, createBackups: false);

@@ -1,6 +1,8 @@
 import '../../config/models.dart';
 import '../../fs/write_plan.dart';
+import '../../naming/name_converter.dart';
 import '../context.dart';
+import '../feature/feature_layout.dart';
 import '../result.dart';
 import '../runner.dart';
 import '../shared/chico_dependency_guard.dart';
@@ -33,9 +35,17 @@ final class ScreenGenerator extends BaseGenerator {
       context.projectRoot,
     );
 
-    final relativePath = feature == null || feature.trim().isEmpty
-        ? 'lib/presentation/pages/$snake.dart'
-        : 'lib/features/${_snake(feature)}/presentation/pages/$snake.dart';
+    String relativePath;
+    if (feature == null || feature.trim().isEmpty) {
+      relativePath = 'lib/presentation/pages/$snake.dart';
+    } else {
+      final layout = FeatureLayout(
+        architecture: context.config.project.architecture,
+        name: NameConverter.parse(feature.trim()),
+      );
+      final dir = layout.page.substring(0, layout.page.lastIndexOf('/'));
+      relativePath = '$dir/$snake.dart';
+    }
 
     final writes = <PlannedFileWrite>[
       PlannedFileWrite(

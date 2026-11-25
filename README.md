@@ -86,6 +86,7 @@ End-to-end recipes: [Cookbook](https://github.com/tahachic/chico_flutter_devkit/
 | Goal | Command | Guide |
 |------|---------|-------|
 | Create a new app | `devkit create <name>` | [Create an app](https://github.com/tahachic/chico_flutter_devkit/blob/main/doc/CREATE_APP.md) |
+| Adopt an existing Flutter app | `devkit adopt` | [Cookbook](https://github.com/tahachic/chico_flutter_devkit/blob/main/doc/COOKBOOK.md#adopt-an-existing-flutter-app) |
 | Configure a project | `devkit config init` / `show` / `set` | [Configuration](https://github.com/tahachic/chico_flutter_devkit/blob/main/doc/CONFIGURATION.md) |
 | Add Chico packages | `devkit add` / `setup chico` | [Cookbook](https://github.com/tahachic/chico_flutter_devkit/blob/main/doc/COOKBOOK.md#add-chico-to-an-existing-app) |
 | Generate features, models, UI, state | `devkit generate …` | [Generator guide](https://github.com/tahachic/chico_flutter_devkit/blob/main/doc/GENERATOR_GUIDE.md) |

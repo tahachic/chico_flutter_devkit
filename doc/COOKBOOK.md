@@ -217,6 +217,20 @@ Use `--sync` later to refresh unchanged generated files; edits inside
 
 ---
 
+## Adopt an existing Flutter app
+
+```bash
+cd my_existing_app
+devkit adopt --architecture clean --state bloc --routing go_router --di get_it
+devkit doctor
+devkit generate feature products --no-tests
+```
+
+If Home already exists without `// <devkit:home-features>` markers, adopt
+refuses — add the markers (or remove Home) and re-run. See [TROUBLESHOOTING](TROUBLESHOOTING.md).
+
+---
+
 ## Add Chico to an existing app
 
 ```bash

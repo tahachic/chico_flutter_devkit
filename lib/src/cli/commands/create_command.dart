@@ -113,6 +113,13 @@ final class CreateCommand extends DevKitCommand {
         'pub-get',
         defaultsTo: true,
         help: 'Run flutter pub get after creation.',
+      )
+      ..addOption(
+        'platforms',
+        defaultsTo: 'android,ios,web',
+        help:
+            'Comma-separated Flutter platforms '
+            '(e.g. android,ios,web,windows,macos,linux).',
       );
   }
 
@@ -254,6 +261,11 @@ final class CreateCommand extends DevKitCommand {
           enableErrorHandling: argResults!['error-handling'] as bool,
           generateExampleFeature: argResults!['example-feature'] as bool,
           outputDirectory: output,
+          platforms: (argResults!['platforms'] as String)
+              .split(',')
+              .map((e) => e.trim())
+              .where((e) => e.isNotEmpty)
+              .join(','),
         ),
       );
       progress.complete('Created ${result.projectPath}');

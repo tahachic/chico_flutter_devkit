@@ -34,6 +34,25 @@ final class AuthGenerator extends BaseGenerator {
       );
     }
     if (context.extra['ui'] == true) {
+      if (context.config.flutter.routing != Routing.goRouter) {
+        throw const InvalidUsageException(
+          'Auth --ui requires go_router routing.',
+          details:
+              'Navigator 1.0 has no DevKit route guard yet.\n'
+              'Create/adopt with --routing go_router, or generate auth '
+              'session without --ui.',
+        );
+      }
+      if (context.config.flutter.dependencyInjection !=
+          DependencyInjection.getIt) {
+        throw const InvalidUsageException(
+          'Auth --ui requires get_it dependency injection.',
+          details:
+              'The login guard needs SessionAuth from get_it.\n'
+              'Create/adopt with --di get_it, or generate auth session '
+              'without --ui and wire SessionAuth yourself.',
+        );
+      }
       final router = File(
         p.join(
           context.projectRoot,
@@ -46,30 +65,31 @@ final class AuthGenerator extends BaseGenerator {
       if (!router.existsSync()) {
         throw const InvalidUsageException(
           'Auth --ui requires lib/core/routing/app_router.dart.',
-          details: 'Create the app with DevKit first, then re-run.',
+          details:
+              'Create the app with DevKit, or run `devkit adopt`, then re-run.',
         );
       }
       final source = router.readAsStringSync();
       if (!source.contains('AppRouter') || !source.contains('featureRoutes')) {
         throw const InvalidUsageException(
           'Auth --ui requires DevKit AppRouter anchors (featureRoutes).',
+          details:
+              'Expected abstract AppRouter with featureRoutes in '
+              'lib/core/routing/app_router.dart.',
         );
       }
-      if (context.config.flutter.dependencyInjection ==
-          DependencyInjection.getIt) {
-        final injector = File(
-          p.join(context.projectRoot, 'lib', 'core', 'di', 'injector.dart'),
+      final injector = File(
+        p.join(context.projectRoot, 'lib', 'core', 'di', 'injector.dart'),
+      );
+      if (!injector.existsSync()) {
+        throw const InvalidUsageException(
+          'Auth --ui requires lib/core/di/injector.dart for get_it.',
         );
-        if (!injector.existsSync()) {
-          throw const InvalidUsageException(
-            'Auth --ui requires lib/core/di/injector.dart for get_it.',
-          );
-        }
-        if (!injector.readAsStringSync().contains('registerFeatures(getIt);')) {
-          throw const InvalidUsageException(
-            'Auth --ui could not find registerFeatures(getIt); in injector.dart.',
-          );
-        }
+      }
+      if (!injector.readAsStringSync().contains('registerFeatures(getIt);')) {
+        throw const InvalidUsageException(
+          'Auth --ui could not find registerFeatures(getIt); in injector.dart.',
+        );
       }
     }
   }
@@ -193,14 +213,17 @@ final class AuthGenerator extends BaseGenerator {
     required Routing routing,
     required DependencyInjection di,
   }) {
-    final file = File(
-      p.join(root, 'lib', 'core', 'routing', 'app_router.dart'),
-    );
-    final existing = file.readAsStringSync();
-    if (routing == Routing.goRouter) {
-      return '''
+    // Validated in validate(): go_router + get_it only.
+    // File is overwritten; commitWrites merges custom regions from disk.
+    if (routing != Routing.goRouter || di != DependencyInjection.getIt) {
+      throw const InvalidUsageException(
+        'Auth --ui requires go_router and get_it.',
+      );
+    }
+    return '''
 import 'package:go_router/go_router.dart';
-${di == DependencyInjection.getIt ? "import 'package:$project/core/di/injector.dart';\nimport 'package:$project/core/auth/session_auth.dart';" : ''}
+import 'package:$project/core/di/injector.dart';
+import 'package:$project/core/auth/session_auth.dart';
 import 'package:$project/features/auth/presentation/pages/login_page.dart';
 import 'package:$project/features/home/presentation/pages/home_page.dart';
 import 'feature_routes.dart';
@@ -210,7 +233,8 @@ abstract final class AppRouter {
   static final GoRouter router = GoRouter(
     redirect: (context, state) {
       final path = state.uri.path;
-      final signedIn = ${di == DependencyInjection.getIt ? 'getIt.isRegistered<SessionAuth>() && getIt<SessionAuth>().bearerToken != null' : 'false /* wire SessionAuth for your DI */'};
+      final signedIn = getIt.isRegistered<SessionAuth>() &&
+          getIt<SessionAuth>().bearerToken != null;
       final loggingIn = path == '/login';
       if (!signedIn && path.startsWith('/features')) {
         return '/login';
@@ -236,22 +260,6 @@ abstract final class AppRouter {
 
 ${CustomRegions.stub('router.extra', comment: 'Extra GoRouter options')}
 ''';
-    }
-
-    // Navigator 1.0 — keep existing map and document guard manually.
-    if (!existing.contains('LoginPage')) {
-      return existing.replaceFirst(
-        'static Map<String, WidgetBuilder> get routes => {',
-        "import 'package:$project/features/auth/presentation/pages/login_page.dart';\n\n"
-            '/// Application router (Navigator 1.0 named routes).\n'
-            'abstract final class AppRouter {\n'
-            "  static const home = '/';\n"
-            "  static const login = '/login';\n\n"
-            '  static Map<String, WidgetBuilder> get routes => {\n'
-            '        login: (_) => const LoginPage(),',
-      );
-    }
-    return existing;
   }
 
   String _loginPage({

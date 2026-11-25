@@ -12,6 +12,7 @@ abstract interface class FlutterCli {
     required String name,
     required String organization,
     required String outputDirectory,
+    String platforms = 'android,ios,web',
   });
 
   Future<void> pubGet(String projectRoot);
@@ -37,6 +38,7 @@ final class ProcessFlutterCli implements FlutterCli {
     required String name,
     required String organization,
     required String outputDirectory,
+    String platforms = 'android,ios,web',
   }) async {
     final parent = Directory(outputDirectory).parent.path;
     await Directory(parent).create(recursive: true);
@@ -48,7 +50,7 @@ final class ProcessFlutterCli implements FlutterCli {
       '--org',
       organization,
       '--platforms',
-      'android,ios,web',
+      platforms,
       outputDirectory,
     ], runInShell: true);
 
@@ -138,12 +140,18 @@ final class FakeFlutterCli implements FlutterCli {
   final List<String> genL10nCalls = [];
   final List<String> migrateDesignWidgetsCalls = [];
 
+  final List<String> lastPlatforms = [];
+
   @override
   Future<void> createProject({
     required String name,
     required String organization,
     required String outputDirectory,
+    String platforms = 'android,ios,web',
   }) async {
+    lastPlatforms
+      ..clear()
+      ..add(platforms);
     created.add(outputDirectory);
     final dir = Directory(outputDirectory);
     await dir.create(recursive: true);

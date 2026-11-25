@@ -330,6 +330,24 @@ devkit generate feature catalog --from-api shop --pagination --search --no-tests
 - [ ] Custom region: edit inside `remote.map`, `--sync` preserves it; edit outside refuses
 - [ ] `devkit doctor` shows `generate.manifest_drift` after an outside edit
 - [ ] `devkit generate auth session --ui` → login page + `/features/*` guard; analyze clean
+- [ ] Auth `--ui` with navigator or non–get_it refuses clearly
+
+### 2.3 Brownfield adopt
+
+```bash
+# Separate folder: plain flutter create, then adopt
+flutter create brown_app --platforms android,ios,web
+cd brown_app
+devkit adopt --architecture clean --state bloc --routing go_router --di get_it
+flutter pub get
+devkit generate feature products --no-tests
+flutter analyze --fatal-infos
+devkit upgrade scaffolds --dry-run
+```
+
+- [ ] Adopt writes `.chico/devkit.yaml` + anchors; unmarked Home refuses
+- [ ] Feature generate + analyze clean after adopt
+- [ ] `upgrade scaffolds` dry-run succeeds
 
 ---
 

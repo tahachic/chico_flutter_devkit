@@ -13,6 +13,7 @@ import '../generators/registry.dart';
 import '../project/flutter_cli.dart';
 import '../quality/tool_runner.dart';
 import 'commands/add_command.dart';
+import 'commands/adopt_command.dart';
 import 'commands/analyze_command.dart';
 import 'commands/clean_command.dart';
 import 'commands/config_command.dart';
@@ -119,6 +120,13 @@ final class CliApp {
           configService: _configService,
           projectRootProvider: () => projectRoot,
           flutterCli: _flutterCli,
+        ),
+      )
+      ..addCommand(
+        AdoptCommand(
+          logger: _logger,
+          configService: _configService,
+          projectRootProvider: () => projectRoot,
         ),
       )
       ..addCommand(

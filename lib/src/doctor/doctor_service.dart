@@ -264,7 +264,10 @@ final class DoctorService {
               severity: DoctorSeverity.low,
               code: 'generate.manifest_drift',
               message: 'Generated file differs from the generate manifest.',
-              details: path,
+              details:
+                  '$path\n'
+                  'Try: generate … --sync (preserves custom regions) or '
+                  'devkit upgrade scaffolds',
             ),
           );
         }

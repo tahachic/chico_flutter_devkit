@@ -140,14 +140,31 @@ Doctor may report `generate.manifest_drift` when hashes diverge — same recover
 
 ---
 
+## `devkit adopt` refuses Home / router / DI
+
+Adopt never overwrites a custom Home without markers. Add:
+
+```dart
+// <devkit:home-features>
+// </devkit:home-features>
+```
+
+inside the Home children list, then re-run. Existing `app_router.dart` /
+`feature_routes.dart` / DI files must already contain DevKit anchors (or be
+removed so adopt can scaffold them).
+
+---
+
 ## Auth `--ui` fails (missing anchors)
 
 `generate auth session --ui` requires:
 
+- Project config: `--routing go_router` and `--di get_it`
 - `lib/core/routing/app_router.dart` with `AppRouter` and `featureRoutes`
-- For get_it: `lib/core/di/injector.dart` with `registerFeatures(getIt);`
+- `lib/core/di/injector.dart` with `registerFeatures(getIt);`
 
-Create the app with DevKit first (or restore those anchors), then re-run.
+Navigator / Riverpod / manual DI refuse `--ui` (no pretend guard). Create or
+`adopt` with go_router + get_it, or generate auth without `--ui`.
 
 ---
 

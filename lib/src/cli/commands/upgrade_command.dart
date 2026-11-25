@@ -1,11 +1,12 @@
 import 'dart:convert';
 
 import '../../core/exit_codes.dart';
+import '../../project/upgrade_scaffolds_service.dart';
 import '../../quality/quality_service.dart';
 import '../../quality/tool_runner.dart';
 import '../command.dart';
 
-/// `devkit upgrade` — upgrade DevKit-managed Chico dependencies.
+/// `devkit upgrade` — Chico deps, or `upgrade scaffolds` for DevKit anchors.
 final class UpgradeCommand extends DevKitCommand {
   UpgradeCommand({
     required super.logger,
@@ -17,7 +18,13 @@ final class UpgradeCommand extends DevKitCommand {
       ..addFlag(
         'dry-run',
         negatable: false,
-        help: 'Show planned upgrades without modifying pubspec.',
+        help: 'Show planned upgrades without writing.',
+      )
+      ..addFlag(
+        'force',
+        abbr: 'f',
+        negatable: false,
+        help: 'Allow scaffold refresh even when files drifted.',
       )
       ..addFlag('json', negatable: false, help: 'Emit a JSON summary.');
   }
@@ -29,10 +36,36 @@ final class UpgradeCommand extends DevKitCommand {
 
   @override
   String get description =>
-      'Upgrade DevKit-managed Chico dependencies to current defaults.';
+      'Upgrade Chico deps, or refresh DevKit scaffolds '
+      '(`upgrade scaffolds`).';
+
+  @override
+  String get invocation =>
+      '${runner!.executableName} upgrade [scaffolds] [arguments]';
 
   @override
   Future<int> run() async {
+    final rest = argResults!.rest;
+    if (rest.isNotEmpty && rest.first.toLowerCase() == 'scaffolds') {
+      final result = await UpgradeScaffoldsService().run(
+        projectRoot: projectRootProvider(),
+        dryRun: argResults!['dry-run'] as bool,
+        force: argResults!['force'] as bool,
+      );
+      if (argResults!['json'] as bool) {
+        logger.info(
+          jsonEncode({
+            'dryRun': result.dryRun,
+            'refreshed': result.refreshed,
+            'skippedDrift': result.skippedDrift,
+          }),
+        );
+      } else {
+        logger.success(result.message);
+      }
+      return ExitCodes.success;
+    }
+
     final service = QualityService(
       toolRunner: _toolRunner ?? ProcessToolRunner(),
     );

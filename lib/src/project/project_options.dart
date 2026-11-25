@@ -22,6 +22,7 @@ final class ProjectCreateOptions {
     required this.outputDirectory,
     this.apiBaseUrl = 'https://api.example.com',
     this.useMaterialUi = false,
+    this.platforms = 'android,ios,web',
   });
 
   final String name;
@@ -47,6 +48,9 @@ final class ProjectCreateOptions {
   /// Use `package:material_ui` instead of deprecated `flutter/material.dart`
   /// (Flutter ≥ 3.47 / required for analyze --fatal-infos on 3.50+).
   final bool useMaterialUi;
+
+  /// Comma-separated Flutter create platforms (default android,ios,web).
+  final String platforms;
 
   String get projectPath => outputDirectory;
 

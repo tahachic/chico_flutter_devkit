@@ -41,6 +41,7 @@ devkit create catalog_app \
 | `--di` | `get_it` (default), `riverpod`, `manual` | Full composition roots (modules / container / factories) |
 | `--org` | `com.example` | Reverse-DNS for `flutter create` |
 | `-o`, `--output` | `./<name>` | Target directory (must be empty/new) |
+| `--platforms` | `android,ios,web` | Passed to `flutter create` (add `windows,macos,linux` as needed) |
 | `--interactive` / `--no-interactive` | interactive on by default | Use `--no-interactive` in CI/scripts |
 | `--chico` | off | Enable full Chico stack (ui + kit + services) |
 | `--chico-ui` / `--no-chico-ui` | off | Toggle `chico_ui` (also implied by `--chico`) |

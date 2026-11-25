@@ -2,6 +2,63 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.3.0
+
+### Added
+
+- **`devkit adopt`** — brownfield Flutter apps into the DevKit matrix (fail-closed)
+- **`create --platforms`** — desktop-capable Flutter create pass-through
+- **`devkit upgrade scaffolds`** — refresh DevKit route/DI anchor stubs
+- Feature `--search` / `--pagination` real UI chrome; layout-aware screen/test
+
+### Changed
+
+- Home upsert refuses unmarked Home (no silent replace)
+- Auth `--ui` requires go_router + get_it (refuses navigator / other DI)
+
+### Docs
+
+- Entry-point + adopt / platforms / scaffolds / architecture honesty coverage
+
+## 1.3.0-dev.4
+
+### Added
+
+- **`devkit upgrade scaffolds`** — refresh DevKit route/DI anchor stubs;
+  doctor drift details suggest `--sync` / `upgrade scaffolds`
+
+## 1.3.0-dev.3
+
+### Added
+
+- **`create --platforms`** — pass-through to `flutter create` (default
+  `android,ios,web`)
+- Feature `--search` / `--pagination` emit real TextField + Previous/Next UI
+- Screen / `test --target feature` honor layered `FeatureLayout` paths
+
+### Docs
+
+- Honest note: `clean` ≡ `feature_first` layout; layered shell paths documented
+
+## 1.3.0-dev.2
+
+### Changed
+
+- **`auth session --ui`** refuses navigator and non–get_it DI (no silent
+  broken guards); requires go_router + get_it + DevKit anchors
+
+## 1.3.0-dev.1
+
+### Added
+
+- **`devkit adopt`** — brownfield config + DevKit anchors (fail-closed on unmarked
+  Home / foreign router/DI); ensures stack pubspec deps
+
+### Fixed
+
+- Feature Home upsert **refuses** existing Home without `devkit:home-features`
+  markers (no more silent replace)
+
 ## 1.2.1
 
 ### Docs

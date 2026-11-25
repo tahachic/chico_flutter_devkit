@@ -76,7 +76,10 @@ Edits **outside** regions still refuse `--sync` (use `--force`).
 | `login.afterSignIn` | Auth `--ui` login page |
 | `router.extra` | Auth `--ui` go_router scaffold |
 
-### Layout (clean / feature-first)
+### Layout
+
+**`clean` and `feature_first` share the same feature folder layout** (honest
+product stance — both use `lib/features/<name>/…`).
 
 ```text
 lib/features/<name>/
@@ -90,6 +93,10 @@ lib/features/<name>/
   presentation/pages/
   presentation/widgets/
 ```
+
+**`layered`:** feature domain/data/presentation live under `lib/domain`,
+`lib/data`, `lib/presentation/features/<name>/…`. Home and core routing/DI
+still use `lib/features/home/…` and `lib/core/…` (shared app shell).
 
 ---
 
@@ -229,8 +236,11 @@ With `--ui`:
 - Hooks `registerAuth` into get_it injector when present
 
 Without `--ui`, behavior matches 1.1.0 (token store + AppConfig only).
-Fail-closed when router/injector DevKit anchors are missing.
-Tokens are stubs until you fill credentials. Only the `session` pack is supported.
+
+`--ui` requires **go_router** + **get_it** and DevKit router/injector anchors.
+Navigator or other DI modes refuse `--ui` with a clear error (no silent no-op
+guard). Tokens are stubs until you fill credentials. Only the `session` pack
+is supported.
 ---
 
 ## `api` (OpenAPI)

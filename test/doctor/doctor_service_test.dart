@@ -134,7 +134,13 @@ dependencies:
       report.issues
           .firstWhere((i) => i.code == 'generate.manifest_drift')
           .details,
-      'lib/tracked.dart',
+      contains('lib/tracked.dart'),
+    );
+    expect(
+      report.issues
+          .firstWhere((i) => i.code == 'generate.manifest_drift')
+          .details,
+      contains('upgrade scaffolds'),
     );
   });
 }

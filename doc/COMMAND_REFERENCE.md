@@ -40,6 +40,24 @@ Notable flags (full table in [CREATE_APP.md](CREATE_APP.md)):
 | `--di` | `get_it` (default), `riverpod`, `manual` |
 | `--localization` / `--locales` | gen-l10n ARB setup (default on / `en`) |
 | `--routing` | `go_router` (default) or `navigator` |
+| `--platforms` | Comma-separated Flutter platforms (default `android,ios,web`) |
+
+---
+
+## `adopt`
+
+Bring an **existing** Flutter app into the DevKit stack matrix (config + anchors).
+Does **not** replace a Home page that lacks DevKit markers.
+
+```bash
+devkit adopt --architecture clean --state bloc --routing go_router --di get_it
+devkit adopt --dry-run
+devkit adopt --force   # overwrite .chico/devkit.yaml
+```
+
+Requires `pubspec.yaml` with a `flutter:` section. Creates missing
+`feature_routes` / DI / `AppRouter` / Home scaffolds; refuses if existing files
+are missing expected markers.
 
 ---
 
@@ -152,12 +170,17 @@ devkit setup chico --force
 
 ## `upgrade`
 
-Update DevKit-managed Chico constraints in `pubspec.yaml` toward current defaults.
+Update DevKit-managed Chico constraints, or refresh DevKit scaffold anchors.
 
 ```bash
 devkit upgrade --dry-run
 devkit upgrade
+devkit upgrade scaffolds --dry-run
+devkit upgrade scaffolds
 ```
+
+`upgrade scaffolds` recreates missing `feature_routes` / `feature_registrations`
+stubs and reports manifest drift (use `generate … --sync` for generated code).
 
 ---
 

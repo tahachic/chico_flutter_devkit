@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:path/path.dart' as p;
 
 import '../../config/models.dart';
+import '../../core/exceptions.dart';
 import '../../fs/write_plan.dart';
 import '../context.dart';
 import '../shared/ui_imports.dart';
@@ -407,7 +408,7 @@ $factoriesEnd
   }) {
     final pascalProject = _pascalize(projectTitle);
     var source = _read(root, homePagePath);
-    if (source == null || !source.contains(homeBegin)) {
+    if (source == null) {
       source = useChico
           ? freshChicoHome(projectTitle: pascalProject, routing: routing)
           : freshMaterialHome(
@@ -415,6 +416,18 @@ $factoriesEnd
               routing: routing,
               useMaterialUi: useMaterialUi,
             );
+    } else if (!source.contains(homeBegin)) {
+      throw const InvalidUsageException(
+        'Home page exists without DevKit anchors.',
+        details:
+            'lib/features/home/presentation/pages/home_page.dart\n'
+            'Add markers:\n'
+            '  // <devkit:home-features>\n'
+            '  // </devkit:home-features>\n'
+            'inside the Home widget children list, or remove the file so '
+            'DevKit can create a scaffolded Home.\n'
+            'Brownfield: run `devkit adopt` first, or migrate Home manually.',
+      );
     }
 
     if (routing == Routing.goRouter &&
