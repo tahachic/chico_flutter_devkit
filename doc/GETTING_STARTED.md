@@ -89,20 +89,45 @@ devkit generate model Product --fields id:String,name:String,price:double?,inSto
 devkit generate screen ProductDetails --feature products
 ```
 
-## 7. Common next steps
+## 7. OpenAPI → runnable screen (optional)
+
+One command generates the API client and wires the feature remote datasource:
+
+```bash
+# Place your OpenAPI file at openapi/shop_api.yaml first
+devkit generate feature catalog --spec openapi/shop_api.yaml --api-name shop --pagination --search
+flutter analyze --fatal-infos
+flutter test
+```
+
+Or two steps: `generate api shop --spec …` then `generate feature catalog --from-api shop`.
+Do not pass `--spec` and `--from-api` together.
+
+## 8. Auth session + login UI (optional)
+
+```bash
+devkit generate auth session --ui
+```
+
+Adds an in-memory token store, `/login` page, and redirects unauthenticated
+`/features/*` to login (go_router + get_it). Without `--ui`, only the token /
+`AppConfig` scaffold is written.
+
+## 9. Common next steps
 
 | I want to… | Do this |
 |------------|---------|
 | Preview without writing | add `--dry-run` |
 | Overwrite generated files | add `--force` |
+| Refresh unchanged gens (keep custom regions) | add `--sync` |
 | Generate from JSON | `devkit generate model Product --from-json sample.json` |
-| Generate an API client | `devkit generate api shop --spec openapi.yaml` |
+| Generate an API client only | `devkit generate api shop --spec openapi.yaml` |
 | Fix doctor issues | `devkit doctor --fix --yes` |
 | See all generators | `devkit list generators` |
 
 Continue with:
 
-- [Cookbook](COOKBOOK.md) — full recipes
+- [Cookbook](COOKBOOK.md) — full recipes (OpenAPI → screen, auth UI, sync)
 - [Generator guide](GENERATOR_GUIDE.md) — every generator
 - [Command reference](COMMAND_REFERENCE.md) — every command
 - [Troubleshooting](TROUBLESHOOTING.md) — when something fails

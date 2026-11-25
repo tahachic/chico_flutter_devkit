@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.2.1
+
+### Docs
+
+- README / COMMAND_REFERENCE / GETTING_STARTED / OPENAPI / TROUBLESHOOTING
+  catch-up for `--spec`, `--from-api`, auth `--ui`, `--sync`, custom region ids,
+  and `generate.manifest_drift`
+
 ## 1.2.0
 
 ### Added

@@ -50,7 +50,7 @@ devkit generate <type> <name> [flags]
 ```
 
 **Types:** `feature`, `model`, `widget`, `screen`, `bloc`, `cubit`, `provider`,
-`repository`, `service`, `enum`, `extension`, `test`, `api`
+`repository`, `service`, `enum`, `extension`, `test`, `api`, `auth`
 
 Shared flags:
 
@@ -58,11 +58,16 @@ Shared flags:
 |------|---------|
 | `--dry-run` | Plan only; write nothing |
 | `-f`, `--force` | Allow overwrite (backups when configured) |
+| `--sync` | Refresh unchanged generate-manifest files (preserves custom regions) |
 | `--tests` / `--no-tests` | Toggle companion tests (default on) |
 | `--architecture` | `clean` \| `feature_first` \| `layered` |
 | `--state` | `bloc` \| `cubit` \| `riverpod` \| `provider` |
 | `--feature` | Place output inside a feature |
 | `--add-missing-chico` | Add missing Chico deps for UI gens (never on dry-run) |
+| `--spec` | OpenAPI path (`api`, or `feature` one-shot client+wire) |
+| `--from-api` | Wire feature to existing `lib/api/<name>/generated` |
+| `--api-name` | API client name when using feature `--spec` |
+| `--ui` | Include login UI + route guard (`auth session`) |
 
 Full examples: [GENERATOR_GUIDE.md](GENERATOR_GUIDE.md)
 
@@ -96,6 +101,10 @@ devkit doctor --fix --yes     # apply safe fixes, then re-inspect
 
 Safe fixes include creating missing config, `analysis_options.yaml`, and `test/`.
 After `--fix`, the report shows **issues fixed** vs **remaining**.
+
+When `.chico/generate_manifest.yaml` exists, doctor also reports
+`generate.manifest_drift` (low) for generated files whose on-disk hash no longer
+matches the manifest — use `generate … --sync` (region-safe) or `--force`.
 
 ---
 

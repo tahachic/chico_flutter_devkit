@@ -69,6 +69,13 @@ or a required feature field cannot be mapped from the API model. Shared flags:
 Generated remote datasources (and auth UI/router stubs) include empty custom
 regions. On `--sync` / regenerate, matching region bodies are re-injected.
 Edits **outside** regions still refuse `--sync` (use `--force`).
+
+| Region id | Emitted by |
+|-----------|------------|
+| `remote.map` | Feature API remote datasource (`mapDto`) |
+| `login.afterSignIn` | Auth `--ui` login page |
+| `router.extra` | Auth `--ui` go_router scaffold |
+
 ### Layout (clean / feature-first)
 
 ```text

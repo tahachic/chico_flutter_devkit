@@ -56,14 +56,20 @@ cd shop_app
 # 2. Diagnose
 devkit doctor
 
-# 3. Generate a feature scaffold
+# 3. Generate a feature scaffold (demo in-memory list)
 devkit generate feature products --crud --pagination --search
 
-# 4. Generate a model and a screen
+# Or OpenAPI → API client + wired screen in one command:
+#   devkit generate feature products --spec openapi/shop_api.yaml --api-name shop
+
+# 4. Optional auth UI (login + /features/* guard)
+#   devkit generate auth session --ui
+
+# 5. Generate a model and a screen
 devkit generate model Sku --fields id:String,code:String,price:double?
 devkit generate screen SkuDetails --no-tests
 
-# 5. Quality gates
+# 6. Quality gates
 devkit format
 devkit analyze
 devkit test
@@ -83,7 +89,10 @@ End-to-end recipes: [Cookbook](https://github.com/tahachic/chico_flutter_devkit/
 | Configure a project | `devkit config init` / `show` / `set` | [Configuration](https://github.com/tahachic/chico_flutter_devkit/blob/main/doc/CONFIGURATION.md) |
 | Add Chico packages | `devkit add` / `setup chico` | [Cookbook](https://github.com/tahachic/chico_flutter_devkit/blob/main/doc/COOKBOOK.md#add-chico-to-an-existing-app) |
 | Generate features, models, UI, state | `devkit generate …` | [Generator guide](https://github.com/tahachic/chico_flutter_devkit/blob/main/doc/GENERATOR_GUIDE.md) |
-| Generate OpenAPI clients | `devkit generate api` | [OpenAPI](https://github.com/tahachic/chico_flutter_devkit/blob/main/doc/OPENAPI.md) |
+| OpenAPI → client | `devkit generate api --spec` | [OpenAPI](https://github.com/tahachic/chico_flutter_devkit/blob/main/doc/OPENAPI.md) |
+| OpenAPI → runnable feature | `devkit generate feature --spec` | [Generator guide](https://github.com/tahachic/chico_flutter_devkit/blob/main/doc/GENERATOR_GUIDE.md#openapi--runnable-screen-spec) |
+| Auth session (+ login UI) | `devkit generate auth session [--ui]` | [Generator guide](https://github.com/tahachic/chico_flutter_devkit/blob/main/doc/GENERATOR_GUIDE.md#auth) |
+| Safe regenerate | `generate … --sync` (custom regions) | [Generator guide](https://github.com/tahachic/chico_flutter_devkit/blob/main/doc/GENERATOR_GUIDE.md#custom-regions) |
 | Diagnose / repair | `devkit doctor [--fix]` | [Command reference](https://github.com/tahachic/chico_flutter_devkit/blob/main/doc/COMMAND_REFERENCE.md#doctor) |
 | Analyze / format / test / clean | `devkit analyze` etc. | [Command reference](https://github.com/tahachic/chico_flutter_devkit/blob/main/doc/COMMAND_REFERENCE.md) |
 | Upgrade Chico constraints | `devkit upgrade` | [Command reference](https://github.com/tahachic/chico_flutter_devkit/blob/main/doc/COMMAND_REFERENCE.md#upgrade) |
@@ -136,8 +145,10 @@ if required Chico deps are missing (or use `--add-missing-chico`).
 - **Backups** — overwrite can keep `.bak.*` files (config)
 - **Repository generator** — requires an existing feature; never emits broken imports
 - **OpenAPI** — unsupported constructs (`oneOf`, OAuth2, …) abort with clear errors
-- **Features ship a demo list** — seeded in-memory data + Home link; swap the
-  datasource for production APIs when ready
+- **`--sync`** — refreshes unchanged manifest files; preserves
+  `// <devkit:custom id="…">` regions; refuses outside edits
+- **Features ship a demo list** — seeded in-memory data + Home link; or wire with
+  `--spec` / `--from-api`
 
 ---
 

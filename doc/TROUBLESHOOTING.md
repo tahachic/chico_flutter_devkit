@@ -114,6 +114,41 @@ Unsupported constructs fail **before any files are written**. The error lists:
 
 See [OPENAPI.md](OPENAPI.md) and [OPENAPI_SUPPORT_MATRIX.md](../OPENAPI_SUPPORT_MATRIX.md).
 
+### `--spec` vs `--from-api`
+
+| Flag | Use when |
+|------|----------|
+| `feature --spec <file>` | Need client + wired feature in one command |
+| `feature --from-api <name>` | Client already under `lib/api/<name>/generated` |
+
+Passing both fails closed. Spec file not found / no list op / unmappable fields
+also fail **before** writing API or feature files.
+
+---
+
+## `--sync` refused / custom regions
+
+```text
+Refusing to sync user-edited generated file.
+```
+
+`--sync` only refreshes files that still match the generate manifest **or** differ
+only inside `// <devkit:custom id="…">` regions. Edits outside regions need
+`--force` (or restore the file). Region-only edits are preserved on sync.
+
+Doctor may report `generate.manifest_drift` when hashes diverge — same recovery.
+
+---
+
+## Auth `--ui` fails (missing anchors)
+
+`generate auth session --ui` requires:
+
+- `lib/core/routing/app_router.dart` with `AppRouter` and `featureRoutes`
+- For get_it: `lib/core/di/injector.dart` with `registerFeatures(getIt);`
+
+Create the app with DevKit first (or restore those anchors), then re-run.
+
 ---
 
 ## Overwrite refused

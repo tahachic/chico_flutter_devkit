@@ -5,7 +5,19 @@ devkit generate api shop --spec path/to/openapi.yaml
 devkit generate api shop --spec openapi.json --base-url https://api.example.com --force
 ```
 
-Related: [Support matrix](../OPENAPI_SUPPORT_MATRIX.md) · [Cookbook](COOKBOOK.md#openapi-client) · [Generator guide](GENERATOR_GUIDE.md#api-openapi)
+### Feature one-shot (`--spec` on feature)
+
+Generate the client **and** a wired feature (remote DS + DI + page) in one step:
+
+```bash
+devkit generate feature products --spec openapi/shop_api.yaml --api-name shop --pagination --search
+```
+
+- Default API folder = feature snake (`products` → `lib/api/products/`). Override with `--api-name`.
+- Mutually exclusive with `--from-api` (use `--from-api` when the client already exists).
+- Preflight parses OpenAPI and validates a list op + field map **before any writes**.
+
+Related: [Support matrix](../OPENAPI_SUPPORT_MATRIX.md) · [Cookbook](COOKBOOK.md#openapi--runnable-screen-one-command) · [Generator guide](GENERATOR_GUIDE.md#openapi--runnable-screen-spec)
 
 ## Supported OpenAPI subset
 
