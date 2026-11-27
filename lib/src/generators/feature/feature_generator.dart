@@ -883,6 +883,12 @@ final class ${layout.pascal}Loaded extends ${layout.pascal}State {
       includeSearch: includeSearch,
       includePagination: includePagination,
     );
+    // With pagination, initial/empty loads use GetPage — omit unused _getList.
+    final needsGetList = !includePagination;
+    final listField = needsGetList
+        ? '''
+  final Get${layout.pascal}List _getList;'''
+        : '';
     final searchField = includeSearch
         ? '''
   final Search${layout.pascal} _search;'''
@@ -892,7 +898,7 @@ final class ${layout.pascal}Loaded extends ${layout.pascal}State {
   final Get${layout.pascal}Page _getPage;'''
         : '';
     final blocCtorParams = [
-      'this._getList',
+      if (needsGetList) 'this._getList',
       if (includeSearch) 'this._search',
       if (includePagination) 'this._getPage',
     ].join(', ');
@@ -1057,7 +1063,7 @@ class ${layout.pascal}Bloc extends Bloc<${layout.pascal}Event, ${layout.pascal}S
     on<${layout.pascal}Refreshed>(_onStarted);$registerSearch$registerPage
   }
 
-  final Get${layout.pascal}List _getList;$searchField$pageField
+$listField$searchField$pageField
 
   Future<void> _onStarted(
     ${layout.pascal}Event event,
@@ -1076,7 +1082,7 @@ $startedBody
         ];
       case StateManagement.cubit:
         final cubitCtor = [
-          'this._getList',
+          if (needsGetList) 'this._getList',
           if (includeSearch) 'this._search',
           if (includePagination) 'this._getPage',
         ].join(', ');
@@ -1173,7 +1179,7 @@ import '${layout.snake}_state.dart';
 class ${layout.pascal}Cubit extends Cubit<${layout.pascal}State> {
   ${layout.pascal}Cubit($cubitCtor) : super(const ${layout.pascal}Initial());
 
-  final Get${layout.pascal}List _getList;$searchField$pageField
+$listField$searchField$pageField
 
   Future<void> load() async {
     emit(const ${layout.pascal}Loading());
@@ -1273,10 +1279,11 @@ final ${layout.snake}RepositoryProvider =
   );
 });
 
+${needsGetList ? '''
 final get${layout.pascal}ListProvider = Provider<Get${layout.pascal}List>((ref) {
   return Get${layout.pascal}List(ref.watch(${layout.snake}RepositoryProvider));
 });
-$queryProvider$pageProvider
+''' : ''}$queryProvider$pageProvider
 final ${layout.snake}ListProvider =
     FutureProvider<List<${layout.pascal}>>((ref) async {
 $listBody
@@ -1286,7 +1293,7 @@ $listBody
         ];
       case StateManagement.provider:
         final providerCtor = [
-          'this._getList',
+          if (needsGetList) 'this._getList',
           if (includeSearch) 'this._search',
           if (includePagination) 'this._getPage',
         ].join(', ');
@@ -1362,7 +1369,7 @@ ${layout.packageImport(project, layout.getUseCase)}
 class ${layout.pascal}Provider extends ChangeNotifier {
   ${layout.pascal}Provider($providerCtor);
 
-  final Get${layout.pascal}List _getList;$searchField$pageField
+$listField$searchField$pageField
 
   bool loading = false;
   String? error;
@@ -1417,16 +1424,19 @@ $loadBody
         : '${layout.pascal}RemoteDataSource(api: ${apiWire.clientPascal}())';
     final repoCtor =
         '${layout.pascal}RepositoryImpl(${[if (includeRemote) 'remote: $remoteExpr', if (includeLocal) 'local: ${layout.pascal}LocalDataSource()'].join(', ')})';
+    final needsGetList = !includePagination;
     return switch (di) {
       DependencyInjection.getIt => [
-        '    final getList = getIt<Get${layout.pascal}List>();',
+        if (needsGetList)
+          '    final getList = getIt<Get${layout.pascal}List>();',
         if (includeSearch)
           '    final search = getIt<Search${layout.pascal}>();',
         if (includePagination)
           '    final getPage = getIt<Get${layout.pascal}Page>();',
       ].join('\n'),
       DependencyInjection.manual => [
-        '    final getList = FeatureFactories.${layout.camel}List();',
+        if (needsGetList)
+          '    final getList = FeatureFactories.${layout.camel}List();',
         if (includeSearch)
           '    final search = FeatureFactories.${layout.camel}Search();',
         if (includePagination)
@@ -1435,7 +1445,7 @@ $loadBody
       DependencyInjection.riverpod =>
         '''
     final repository = $repoCtor;
-    final getList = Get${layout.pascal}List(repository);
+${needsGetList ? '    final getList = Get${layout.pascal}List(repository);' : ''}
 ${includeSearch ? '    final search = Search${layout.pascal}(repository);' : ''}
 ${includePagination ? '    final getPage = Get${layout.pascal}Page(repository);' : ''}''',
     };
@@ -1446,7 +1456,7 @@ ${includePagination ? '    final getPage = Get${layout.pascal}Page(repository);'
     required bool includePagination,
   }) {
     final args = [
-      'getList',
+      if (!includePagination) 'getList',
       if (includeSearch) 'search',
       if (includePagination) 'getPage',
     ];

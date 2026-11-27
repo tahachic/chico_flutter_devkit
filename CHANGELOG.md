@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.4.1
+
+### Fixed
+
+- Feature blocs/cubits/providers with `--pagination` no longer keep an unused
+  `_getList` field (clears `unused_field` under `--fatal-infos`)
+
 ## 1.4.0
 
 ### Changed

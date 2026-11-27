@@ -2,7 +2,7 @@ name: chico_flutter_devkit
 description: >
   Professional Flutter development toolkit — project creation, code generation,
   diagnostics, and Chico ecosystem integration. Installable as `devkit`.
-version: 1.4.0
+version: 1.4.1
 homepage: https://github.com/tahachic/chico_flutter_devkit
 repository: https://github.com/tahachic/chico_flutter_devkit
 issue_tracker: https://github.com/tahachic/chico_flutter_devkit/issues

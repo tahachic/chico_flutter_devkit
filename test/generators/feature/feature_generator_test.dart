@@ -112,6 +112,18 @@ void main() {
     expect(events, contains('ProductsSearched'));
     expect(events, contains('ProductsPageRequested'));
 
+    final bloc = File(
+      p.join(root, 'presentation', 'bloc', 'products_bloc.dart'),
+    ).readAsStringSync();
+    expect(bloc, contains('_getPage'));
+    expect(bloc, contains('_search'));
+    expect(
+      bloc,
+      isNot(contains('_getList')),
+      reason:
+          'pagination path must not leave unused _getList (analyze warning)',
+    );
+
     final entityTest = File(
       p.join(
         tempRoot.path,
@@ -143,7 +155,9 @@ void main() {
     expect(page, contains('ProductsSearched'));
     expect(page, contains('ProductsPageRequested'));
     expect(page, isNot(contains('Wire to repository.search')));
-    expect(page, contains('getIt<GetProductsList>()'));
+    expect(page, contains('getIt<SearchProducts>()'));
+    expect(page, contains('getIt<GetProductsPage>()'));
+    expect(page, isNot(contains('getIt<GetProductsList>()')));
     expect(page, isNot(contains('TODO(devkit)')));
 
     final regs = File(
@@ -151,6 +165,8 @@ void main() {
     ).readAsStringSync();
     expect(regs, contains('ProductsRepository'));
     expect(regs, contains('GetProductsList'));
+    expect(regs, contains('SearchProducts'));
+    expect(regs, contains('GetProductsPage'));
 
     final routes = File(
       p.join(tempRoot.path, 'lib', 'core', 'routing', 'feature_routes.dart'),
