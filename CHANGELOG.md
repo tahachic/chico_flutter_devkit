@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.5.0-dev.3
+
+### Added
+
+- Create/adopt ENV flavor wiring: Android `productFlavors` + iOS DevKit
+  xcconfigs; create-time `AppConfig` aligned with `--dart-define=ENV=`
+
 ## 1.5.0-dev.2
 
 ### Changed

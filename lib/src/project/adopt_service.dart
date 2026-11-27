@@ -12,6 +12,7 @@ import '../fs/write_plan.dart';
 import '../generators/feature/feature_integration.dart';
 import '../generators/shared/ui_imports.dart';
 import '../pubspec/pubspec_editor.dart';
+import 'flavor_scaffold.dart';
 import 'flutter_cli.dart';
 
 /// Result of adopting an existing Flutter app into the DevKit matrix.
@@ -160,6 +161,11 @@ final class AdoptService {
 
     if (!dryRun && toApply.isNotEmpty) {
       await fs.applyWrites(toApply, dryRun: false);
+    }
+
+    if (!dryRun) {
+      final flavors = await FlavorScaffold.apply(root);
+      created.addAll(flavors.where((f) => !created.contains(f)));
     }
 
     return AdoptResult(

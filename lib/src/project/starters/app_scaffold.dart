@@ -297,15 +297,44 @@ Map<String, WidgetBuilder> get featureRoutes => {
   static String _appConfig(ProjectCreateOptions options) {
     final name = options.normalizedName.pascalCase;
     return '''
-/// App-wide configuration (injected by the composition root).
+/// App-wide configuration via --dart-define=ENV=dev|staging|prod.
 final class AppConfig {
   const AppConfig({
-    this.appName = '$name',
-    this.apiBaseUrl = 'https://api.example.com',
+    required this.env,
+    required this.appName,
+    required this.apiBaseUrl,
   });
 
+  final String env;
   final String appName;
   final String apiBaseUrl;
+
+  static const dev = AppConfig(
+    env: 'dev',
+    appName: '$name',
+    apiBaseUrl: 'https://api-dev.example.com/v1',
+  );
+
+  static const staging = AppConfig(
+    env: 'staging',
+    appName: '$name',
+    apiBaseUrl: 'https://api-staging.example.com/v1',
+  );
+
+  static const prod = AppConfig(
+    env: 'prod',
+    appName: '$name',
+    apiBaseUrl: 'https://api.example.com/v1',
+  );
+
+  static AppConfig get current {
+    const env = String.fromEnvironment('ENV', defaultValue: 'dev');
+    return switch (env) {
+      'staging' => staging,
+      'prod' => prod,
+      _ => dev,
+    };
+  }
 }
 ''';
   }
@@ -386,7 +415,7 @@ void registerFeatures(GetIt getIt) {
     final body = StringBuffer()
       ..writeln('''
   if (!getIt.isRegistered<AppConfig>()) {
-    getIt.registerLazySingleton<AppConfig>(() => const AppConfig());
+    getIt.registerLazySingleton<AppConfig>(() => AppConfig.current);
   }''');
     if (options.enableLogging) {
       imports.writeln("import '../logging/app_logger.dart';");
@@ -447,7 +476,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'app_config.dart';
 $loggerImport
 /// App-wide Riverpod providers.
-final appConfigProvider = Provider<AppConfig>((ref) => const AppConfig());
+final appConfigProvider = Provider<AppConfig>((ref) => AppConfig.current);
 
 final appNameProvider = Provider<String>(
   (ref) => ref.watch(appConfigProvider).appName,
@@ -551,7 +580,7 @@ $loggerImport
 /// Manual composition root — construct the object graph explicitly.
 Future<void> configureDependencies() async {
   ServiceLocator.services = AppServices(
-    config: const AppConfig(),
+    config: AppConfig.current,
     $loggerArg);
 $logLine
 }

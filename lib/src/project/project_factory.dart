@@ -14,6 +14,7 @@ import '../generators/shared/ui_imports.dart';
 import '../integrations/chico/chico_integration_service.dart';
 import '../integrations/chico/chico_packages.dart';
 import '../pubspec/pubspec_editor.dart';
+import 'flavor_scaffold.dart';
 import 'flutter_cli.dart';
 import 'material_ui_l10n_patch.dart';
 import 'project_options.dart';
@@ -193,6 +194,8 @@ final class ProjectFactory {
       config: config,
       force: true,
     );
+
+    await FlavorScaffold.apply(projectPath);
 
     if (effective.generateExampleFeature) {
       final runner = GeneratorRunner(

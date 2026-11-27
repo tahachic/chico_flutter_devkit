@@ -349,7 +349,20 @@ devkit upgrade scaffolds --dry-run
 - [ ] Feature generate + analyze clean after adopt
 - [ ] `upgrade scaffolds` dry-run succeeds
 
-### 2.4 Desktop platforms smoke (optional — not a CI gate)
+### 2.4 ENV flavors smoke
+
+```bash
+# After create or adopt:
+flutter run --dart-define=ENV=dev
+# Android (when productFlavors present):
+# flutter run --flavor dev --dart-define=ENV=dev
+```
+
+- [ ] `lib/core/config/app_config.dart` reads `ENV` via `String.fromEnvironment`
+- [ ] Android `productFlavors` dev/staging/prod present (or `devkit_flavors.gradle` snippet)
+- [ ] iOS `ios/Flutter/Devkit-*.xcconfig` + `DEVKIT_FLAVORS.md` present when ios folder exists
+
+### 2.5 Desktop platforms smoke (optional — not a CI gate)
 
 ```bash
 cd ~/devkit_manual_qa
