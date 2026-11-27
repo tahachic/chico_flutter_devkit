@@ -334,7 +334,14 @@ $navigateHome
       body: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            const Text(
+              'Stub login: any non-empty password signs in. '
+              'Replace signInStub with your real credentials flow.',
+              style: TextStyle(fontSize: 13),
+            ),
+            const SizedBox(height: 16),
             TextField(
               controller: _email,
               decoration: const InputDecoration(labelText: 'Email'),

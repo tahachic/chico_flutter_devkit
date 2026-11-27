@@ -75,11 +75,12 @@ final class AdoptService {
           'Home page exists without DevKit anchors.',
           details:
               '$homePath\n'
-              'Add:\n'
-              '  ${FeatureIntegration.homeBegin}\n'
-              '  ${FeatureIntegration.homeEnd}\n'
-              'inside the Home children list, then re-run adopt.\n'
-              'DevKit will not replace your Home page.',
+              'Recovery:\n'
+              '  1) Add ${FeatureIntegration.homeBegin} / '
+              '${FeatureIntegration.homeEnd} inside the Home children list, or\n'
+              '  2) Move/rename the file so adopt can scaffold a marked Home.\n'
+              'DevKit will not replace your Home page.\n'
+              'After adopt: `devkit upgrade scaffolds` refreshes route/DI stubs.',
         );
       }
     }
@@ -192,8 +193,9 @@ final class AdoptService {
           'Existing app_router.dart is missing DevKit anchors.',
           details:
               'Expected AppRouter and featureRoutes.\n'
-              'Align the router with DevKit create output, or remove the file '
-              'so adopt can scaffold it.',
+              'Recovery: align with DevKit create output, or remove '
+              'lib/core/routing/app_router.dart so adopt can scaffold it.\n'
+              'Later: `devkit upgrade scaffolds` refreshes missing stubs.',
         );
       }
     }
@@ -232,7 +234,9 @@ final class AdoptService {
               'Existing feature_registrations.dart is missing DevKit markers.',
               details:
                   'Expected ${FeatureIntegration.diImportsBegin} and '
-                  '${FeatureIntegration.regsBegin}.',
+                  '${FeatureIntegration.regsBegin}.\n'
+                  'Recovery: add the markers, or remove the file so adopt can '
+                  'scaffold it. Then: `devkit upgrade scaffolds`.',
             );
           }
         }

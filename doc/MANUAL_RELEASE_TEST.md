@@ -349,6 +349,28 @@ devkit upgrade scaffolds --dry-run
 - [ ] Feature generate + analyze clean after adopt
 - [ ] `upgrade scaffolds` dry-run succeeds
 
+### 2.4 Desktop platforms smoke (optional — not a CI gate)
+
+```bash
+cd ~/devkit_manual_qa
+devkit create desk_shop \
+  --platforms windows,macos,linux \
+  --no-example-feature \
+  --no-interactive \
+  --output desk_shop
+cd desk_shop
+flutter pub get
+flutter analyze --fatal-infos
+# Run the host OS target you have tooling for, e.g.:
+# flutter run -d windows
+# flutter run -d macos
+# flutter run -d linux
+```
+
+- [ ] Create succeeds with requested `--platforms`
+- [ ] Analyze clean
+- [ ] At least one desktop target builds/runs on this machine
+
 ---
 
 ## 3. Chico stack path

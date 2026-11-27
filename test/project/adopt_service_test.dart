@@ -149,6 +149,17 @@ void main() {
         ),
       ),
     );
+    try {
+      await adopt.adopt(
+        projectRoot: tempRoot.path,
+        architecture: Architecture.clean,
+        state: StateManagement.bloc,
+        routing: Routing.goRouter,
+        di: DependencyInjection.getIt,
+      );
+    } on InvalidUsageException catch (e) {
+      expect(e.details, contains('upgrade scaffolds'));
+    }
   });
 
   test('feature generate refuses unmarked Home', () async {

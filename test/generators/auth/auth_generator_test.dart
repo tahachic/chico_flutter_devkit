@@ -42,12 +42,11 @@ void main() {
     );
 
     expect(result.writes.createdCount, greaterThanOrEqualTo(3));
-    expect(
-      File(
-        p.join(tempRoot.path, 'lib', 'core', 'auth', 'session_auth.dart'),
-      ).existsSync(),
-      isTrue,
-    );
+    final sessionAuth = File(
+      p.join(tempRoot.path, 'lib', 'core', 'auth', 'session_auth.dart'),
+    ).readAsStringSync();
+    expect(sessionAuth, contains('signInStub'));
+    expect(sessionAuth, contains('Future<void> signOut()'));
     expect(
       File(
         p.join(tempRoot.path, 'lib', 'core', 'config', 'app_config.dart'),

@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.4.0-dev.3
+
+### Changed
+
+- Adopt refuse messages include recovery paths + `upgrade scaffolds` hint
+- Auth `--ui` login page shows an explicit stub-credentials banner
+- Manual release guide adds desktop `--platforms` smoke checklist
+
 ## 1.4.0-dev.2
 
 ### Changed
