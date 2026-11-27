@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.4.0-dev.4
+
+### Changed
+
+- Docs: GENERATOR_GUIDE + ARCHITECTURE Phase 8/9 honesty for wired chrome
+- Removed unused `StubCommand`; service/test generators labeled as scaffolds
+
 ## 1.4.0-dev.3
 
 ### Changed

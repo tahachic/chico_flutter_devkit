@@ -178,7 +178,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('$pascal', () {
-    test('placeholder assertion', () {
+    test('scaffold placeholder — replace with real asserts', () {
       expect(true, isTrue);
     });
   });

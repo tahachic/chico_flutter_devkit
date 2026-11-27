@@ -25,8 +25,9 @@ devkit generate feature catalog --architecture layered --state riverpod --no-tes
 | Flag | Effect |
 |------|--------|
 | `--crud` | create/update/delete on repository + remote |
-| `--pagination` | page APIs + UI hook comments |
-| `--search` / `--filters` | search/filter hooks |
+| `--pagination` | page APIs + wired Previous/Next UI |
+| `--search` | search API + wired Search TextField |
+| `--filters` | comment-only filter hint (no UI yet) |
 | `--local` | local datasource |
 | `--remote` / `--no-remote` | remote datasource (default on) |
 | `--fields` | entity/model fields |

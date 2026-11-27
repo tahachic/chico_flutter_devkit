@@ -70,7 +70,8 @@ Requires Dart `^3.8` and Flutter `>=3.32`.
 | 5 | Broader routing (`navigator` + go_router) | Shipped |
 | 6 | OpenAPI breadth (basic auth + multipart) | Shipped |
 | 7 | Stability product (CI create+APK + Android doc) | Shipped |
-| 8 | Trust / stable release | Planned |
+| 8 | Trust / stable release | Shipped (`1.0.0`+) |
+| 9 | Wired list chrome + honesty (`1.4.0`) | Search/pagination UI + CI/docs |
 
 See `CHANGELOG.md` / `devkit --version` for the current package version.
 

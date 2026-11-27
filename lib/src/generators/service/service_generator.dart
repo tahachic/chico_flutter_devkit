@@ -59,7 +59,7 @@ class ${pascal}Impl implements $pascal {
 
   @override
   Future<void> initialize() async {
-    // TODO: wire dependencies / clients.
+    // Scaffold only — wire dependencies / clients for your domain.
     _ready = true;
   }
 
