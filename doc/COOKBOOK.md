@@ -59,10 +59,11 @@ Feature Home links use `Navigator.pushNamed('/features/<name>')`.
 ```bash
 devkit create android_smoke --no-interactive --no-example-feature
 cd android_smoke
-flutter build apk --debug
+flutter build apk --debug --flavor dev --dart-define=ENV=dev
 ```
 
-Chico path and plugin floors: [ANDROID.md](ANDROID.md).
+Create/adopt wires `productFlavors` (dev/staging/prod), so builds need
+`--flavor`. Chico path and plugin floors: [ANDROID.md](ANDROID.md).
 
 ---
 

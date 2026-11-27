@@ -58,7 +58,7 @@ GitHub Actions (`.github/workflows/ci.yml`):
 
 1. **unit** — Ubuntu / Windows / macOS (`dart test`, no Flutter)
 2. **flutter_e2e** — Ubuntu tagged E2E
-3. **create_apk** — each OS: `devkit create` (Material) → `flutter build apk --debug`
+3. **create_apk** — each OS: `devkit create` (Material) → `flutter build apk --debug --flavor dev --dart-define=ENV=dev`
 4. **create_apk_chico** — Ubuntu: `devkit create --chico` → debug APK
 
 Use these jobs as the regression net for Android packaging breaks.
@@ -69,11 +69,11 @@ Use these jobs as the regression net for Android packaging breaks.
 dart pub global activate --source path .
 devkit create android_smoke --no-interactive --no-example-feature
 cd android_smoke
-flutter build apk --debug
+flutter build apk --debug --flavor dev --dart-define=ENV=dev
 
 # Optional Chico path
 devkit create chico_smoke --chico --no-interactive --no-example-feature
-cd chico_smoke && flutter build apk --debug
+cd chico_smoke && flutter build apk --debug --flavor dev --dart-define=ENV=dev
 ```
 
 ## When builds fail

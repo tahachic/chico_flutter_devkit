@@ -13,6 +13,7 @@ All notable changes to this project will be documented in this file.
 ### Fixed
 
 - Preview CRUD seed helper renamed (`previewNew`) so `--fatal-infos` stays clean
+- CI / docs APK smoke uses `--flavor dev` (create wires Android productFlavors)
 
 ## 1.5.0-dev.3
 
