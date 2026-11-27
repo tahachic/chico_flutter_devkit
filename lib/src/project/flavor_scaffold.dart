@@ -116,23 +116,21 @@ Wire the xcconfig into your Xcode scheme when you want IDE-native flavors.
     return -1;
   }
 
+  // No resValue — Flutter Gradle disables custom resource values in flavors.
+  // ENV is carried by --dart-define=ENV=… (AppConfig.current).
   static const _androidKtsFlavors = '''
     flavorDimensions += "env"
     productFlavors {
         create("dev") {
             dimension = "env"
             applicationIdSuffix = ".dev"
-            resValue("string", "app_name", "App Dev")
-            // Match Dart: --dart-define=ENV=dev
         }
         create("staging") {
             dimension = "env"
             applicationIdSuffix = ".staging"
-            resValue("string", "app_name", "App Staging")
         }
         create("prod") {
             dimension = "env"
-            resValue("string", "app_name", "App")
         }
     }
 ''';
@@ -143,16 +141,13 @@ Wire the xcconfig into your Xcode scheme when you want IDE-native flavors.
         dev {
             dimension "env"
             applicationIdSuffix ".dev"
-            resValue "string", "app_name", "App Dev"
         }
         staging {
             dimension "env"
             applicationIdSuffix ".staging"
-            resValue "string", "app_name", "App Staging"
         }
         prod {
             dimension "env"
-            resValue "string", "app_name", "App"
         }
     }
 ''';
