@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.4.0-dev.1
+
+### Changed
+
+- Feature `--search` / `--pagination` wire TextField and Previous/Next through
+  Search/GetPage use cases and bloc/cubit/provider/riverpod state (no empty
+  handlers)
+- `--filters` is documented as comment-only (no fake UI)
+
+### Fixed
+
+- Local-only features with `--search` / `--pagination` implement repository
+  methods via local datasource (contract no longer hollow)
+
 ## 1.3.1
 
 ### Fixed

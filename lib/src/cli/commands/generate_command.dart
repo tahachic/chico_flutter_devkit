@@ -42,15 +42,19 @@ final class GenerateCommand extends DevKitCommand {
       )
       ..addFlag(
         'pagination',
-        help: 'Include pagination APIs/UI hooks.',
+        help: 'Include pagination APIs and wired Previous/Next UI.',
         negatable: false,
       )
       ..addFlag(
         'search',
-        help: 'Include search APIs/UI hooks.',
+        help: 'Include search APIs and wired Search TextField UI.',
         negatable: false,
       )
-      ..addFlag('filters', help: 'Include filter UI hooks.', negatable: false)
+      ..addFlag(
+        'filters',
+        help: 'Comment-only filter hint in the list page (no UI yet).',
+        negatable: false,
+      )
       ..addFlag(
         'local',
         help: 'Include a local datasource (features).',

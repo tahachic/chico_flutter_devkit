@@ -43,6 +43,8 @@ abstract final class FeatureIntegration {
     required FeatureLayout layout,
     required bool includeRemote,
     required bool includeLocal,
+    bool includePagination = false,
+    bool includeSearch = false,
     bool useMaterialUi = false,
     ApiFeatureWirePlan? apiWire,
   }) {
@@ -92,6 +94,8 @@ abstract final class FeatureIntegration {
               layout: layout,
               includeRemote: includeRemote,
               includeLocal: includeLocal,
+              includePagination: includePagination,
+              includeSearch: includeSearch,
               apiWire: apiWire,
             ),
             mode: FileWriteMode.overwrite,
@@ -122,6 +126,8 @@ abstract final class FeatureIntegration {
               layout: layout,
               includeRemote: includeRemote,
               includeLocal: includeLocal,
+              includePagination: includePagination,
+              includeSearch: includeSearch,
               apiWire: apiWire,
             ),
             mode: FileWriteMode.overwrite,
@@ -211,6 +217,8 @@ $routesEnd
     required FeatureLayout layout,
     required bool includeRemote,
     required bool includeLocal,
+    bool includePagination = false,
+    bool includeSearch = false,
     ApiFeatureWirePlan? apiWire,
   }) {
     final importLines = <String>[
@@ -265,6 +273,22 @@ $routesEnd
       () => Get${layout.pascal}List(getIt()),
     );
   }''');
+    if (includeSearch) {
+      body.writeln('''
+  if (!getIt.isRegistered<Search${layout.pascal}>()) {
+    getIt.registerFactory<Search${layout.pascal}>(
+      () => Search${layout.pascal}(getIt()),
+    );
+  }''');
+    }
+    if (includePagination) {
+      body.writeln('''
+  if (!getIt.isRegistered<Get${layout.pascal}Page>()) {
+    getIt.registerFactory<Get${layout.pascal}Page>(
+      () => Get${layout.pascal}Page(getIt()),
+    );
+  }''');
+    }
 
     var source = _read(root, featureRegistrationsPath) ?? freshRegistrations();
     if (!source.contains(diImportsBegin) || !source.contains(regsBegin)) {
@@ -340,6 +364,8 @@ $providerExportsEnd
     required FeatureLayout layout,
     required bool includeRemote,
     required bool includeLocal,
+    bool includePagination = false,
+    bool includeSearch = false,
     ApiFeatureWirePlan? apiWire,
   }) {
     final importLines = <String>[
@@ -356,12 +382,25 @@ $providerExportsEnd
       if (includeRemote) 'remote: $remoteExpr',
       if (includeLocal) 'local: ${layout.pascal}LocalDataSource()',
     ].join(', ');
-    final method =
-        '''
+    final methods = <String>[
+      '''
   static Get${layout.pascal}List ${layout.camel}List() {
     final repository = ${layout.pascal}RepositoryImpl($ctorArgs);
     return Get${layout.pascal}List(repository);
-  }''';
+  }''',
+      if (includeSearch)
+        '''
+  static Search${layout.pascal} ${layout.camel}Search() {
+    final repository = ${layout.pascal}RepositoryImpl($ctorArgs);
+    return Search${layout.pascal}(repository);
+  }''',
+      if (includePagination)
+        '''
+  static Get${layout.pascal}Page ${layout.camel}Page() {
+    final repository = ${layout.pascal}RepositoryImpl($ctorArgs);
+    return Get${layout.pascal}Page(repository);
+  }''',
+    ];
 
     var source = _read(root, featureFactoriesPath) ?? freshFeatureFactories();
     if (!source.contains(factoryImportsBegin) ||
@@ -377,13 +416,21 @@ $providerExportsEnd
         identity: line,
       );
     }
-    return upsertLine(
-      source,
-      begin: factoriesBegin,
-      end: factoriesEnd,
-      entry: method,
-      identity: '${layout.camel}List()',
-    );
+    for (final method in methods) {
+      final identity = method.contains('Search')
+          ? '${layout.camel}Search()'
+          : method.contains('Page')
+          ? '${layout.camel}Page()'
+          : '${layout.camel}List()';
+      source = upsertLine(
+        source,
+        begin: factoriesBegin,
+        end: factoriesEnd,
+        entry: method,
+        identity: identity,
+      );
+    }
+    return source;
   }
 
   static String freshFeatureFactories() =>

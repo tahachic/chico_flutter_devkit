@@ -100,6 +100,18 @@ void main() {
     expect(repo, contains('search'));
     expect(repo, contains('create'));
 
+    final useCases = File(
+      p.join(root, 'domain', 'usecases', 'get_products_list.dart'),
+    ).readAsStringSync();
+    expect(useCases, contains('class SearchProducts'));
+    expect(useCases, contains('class GetProductsPage'));
+
+    final events = File(
+      p.join(root, 'presentation', 'bloc', 'products_event.dart'),
+    ).readAsStringSync();
+    expect(events, contains('ProductsSearched'));
+    expect(events, contains('ProductsPageRequested'));
+
     final entityTest = File(
       p.join(
         tempRoot.path,
@@ -128,6 +140,9 @@ void main() {
     expect(page, contains('BlocProvider'));
     expect(page, contains('ProductsStarted'));
     expect(page, contains('ProductsListTile'));
+    expect(page, contains('ProductsSearched'));
+    expect(page, contains('ProductsPageRequested'));
+    expect(page, isNot(contains('Wire to repository.search')));
     expect(page, contains('getIt<GetProductsList>()'));
     expect(page, isNot(contains('TODO(devkit)')));
 

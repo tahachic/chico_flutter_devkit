@@ -122,5 +122,39 @@ List<RouteBase> get featureRoutes => [
     expect(page, contains("child: const Text('Previous')"));
     expect(page, contains("child: const Text('Next')"));
     expect(page, isNot(contains('Search UI hook enabled')));
+    expect(page, isNot(contains('Wire to repository.search')));
+    expect(page, isNot(contains('Wire to fetchPage')));
+    expect(page, contains('ProductsSearched'));
+    expect(page, contains('ProductsPageRequested'));
+
+    final bloc = File(
+      p.join(
+        project,
+        'lib',
+        'features',
+        'products',
+        'presentation',
+        'bloc',
+        'products_bloc.dart',
+      ),
+    ).readAsStringSync();
+    expect(bloc, contains('SearchProducts'));
+    expect(bloc, contains('GetProductsPage'));
+    expect(bloc, contains('_onSearched'));
+    expect(bloc, contains('_onPageRequested'));
+
+    final useCases = File(
+      p.join(
+        project,
+        'lib',
+        'features',
+        'products',
+        'domain',
+        'usecases',
+        'get_products_list.dart',
+      ),
+    ).readAsStringSync();
+    expect(useCases, contains('class SearchProducts'));
+    expect(useCases, contains('class GetProductsPage'));
   });
 }

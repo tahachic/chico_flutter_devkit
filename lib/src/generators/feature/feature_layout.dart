@@ -41,6 +41,9 @@ final class FeatureLayout {
     Architecture.layered => 'lib/domain/usecases/get_${snake}_list.dart',
   };
 
+  /// Co-located with [getUseCase] — Search / GetPage live in the same file.
+  String get listUseCases => getUseCase;
+
   String get model => switch (architecture) {
     Architecture.clean ||
     Architecture.featureFirst => '$featureRoot/data/models/${snake}_model.dart',
