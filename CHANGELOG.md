@@ -2,44 +2,32 @@
 
 All notable changes to this project will be documented in this file.
 
-## 1.5.0-dev.4
+## 1.5.0
+
+Wired logic, preview UI only — swap presentation later without rewriting the
+graph (domain / data / state / DI / routes / session / ENV flavors).
+
+### Added
+
+- Feature `--crud`: Create/Update/Delete use cases through bloc/cubit/
+  provider/riverpod with preview FAB + delete actions
+- Auth: `flutter_secure_storage` session store, hydrate, `TokenRefresh` hook,
+  preview Sign out (`--ui`)
+- Create/adopt Android `productFlavors` + iOS DevKit xcconfigs; `AppConfig`
+  via `--dart-define=ENV=dev|staging|prod`
 
 ### Changed
 
 - Docs doctrine: preview UI, wired logic (COOKBOOK / GENERATOR_GUIDE /
   GETTING_STARTED)
-- flutter_e2e hard gate: `--crud` + auth + ENV flavors must analyze clean
+- flutter_e2e hard gate for `--crud` + auth + flavors; CI APK uses `--flavor
+  dev`
 
 ### Fixed
 
-- Preview CRUD seed helper renamed (`previewNew`) so `--fatal-infos` stays clean
-- CI / docs APK smoke uses `--flavor dev` (create wires Android productFlavors)
-- Android flavors omit `resValue` (Flutter Gradle disables custom resource values)
-
-## 1.5.0-dev.3
-
-### Added
-
-- Create/adopt ENV flavor wiring: Android `productFlavors` + iOS DevKit
-  xcconfigs; create-time `AppConfig` aligned with `--dart-define=ENV=`
-
-## 1.5.0-dev.2
-
-### Changed
-
-- Auth `SessionTokenStore` uses `flutter_secure_storage` + in-memory cache;
-  injector hydrates on boot; `TokenRefresh` hook + login preview Sign out
-
-## 1.5.0-dev.1
-
-### Added
-
-- Feature `--crud` wires Create/Update/Delete use cases through bloc/cubit/
-  provider/riverpod with preview FAB + delete actions (replaceable UI)
-
-### Fixed
-
-- Local-only `--crud` implements repository mutations via local datasource
+- Local-only `--crud` repository mutations via local datasource
+- Preview seed helper `previewNew` (clean under `--fatal-infos`)
+- Android flavors omit `resValue` (Flutter Gradle compatibility)
 
 ## 1.4.1
 
