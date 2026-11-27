@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.4.0-dev.2
+
+### Changed
+
+- CI Flutter jobs pin `3.50.0` (intentional bump only)
+- Doctor warns when Flutter ≥ 3.47 and `material_ui` is missing
+- `generate test --kind widget` uses `UiImports` for Material harnesses
+
 ## 1.4.0-dev.1
 
 ### Changed

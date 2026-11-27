@@ -6,7 +6,8 @@ on:
   pull_request:
 
 # Package constraint: sdk ^3.8.0 (see pubspec.yaml).
-# Unit job pins Dart 3.8.0 (minimum). Flutter jobs use stable.
+# Unit job pins Dart 3.8.0 (minimum).
+# Flutter jobs pin 3.50.0 (material_ui default; bump intentionally).
 # No dependency caching — avoids stale pub results.
 # flutter_e2e is excluded from unit and run only in the dedicated job.
 
@@ -36,6 +37,7 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
+          flutter-version: '3.50.0'
           cache: false
       - run: flutter --version
       - run: dart --version
@@ -60,6 +62,7 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
+          flutter-version: '3.50.0'
           cache: false
       - run: flutter --version
       - run: dart pub get
@@ -85,6 +88,7 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
+          flutter-version: '3.50.0'
           cache: false
       - run: flutter --version
       - run: dart pub get

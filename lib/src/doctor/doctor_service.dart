@@ -7,7 +7,9 @@ import '../config/config_paths.dart';
 import '../config/config_service.dart';
 import '../config/defaults.dart';
 import '../core/exceptions.dart';
+import '../generators/shared/ui_imports.dart';
 import '../integrations/chico/chico_packages.dart';
+import '../project/flutter_cli.dart';
 import '../project/generate_manifest.dart';
 import '../pubspec/pubspec_editor.dart';
 import '../quality/tool_runner.dart';
@@ -15,10 +17,15 @@ import 'models.dart';
 
 /// Diagnoses a Flutter project and applies only safe fixes.
 final class DoctorService {
-  DoctorService({required this.configService, required this.toolRunner});
+  DoctorService({
+    required this.configService,
+    required this.toolRunner,
+    FlutterCli? flutterCli,
+  }) : flutterCli = flutterCli ?? ProcessFlutterCli();
 
   final ConfigService configService;
   final ToolRunner toolRunner;
+  final FlutterCli flutterCli;
 
   static const int oversizedFileBytes = 200 * 1024;
 
@@ -165,6 +172,26 @@ final class DoctorService {
           message: 'pubspec.lock is missing (run flutter pub get).',
         ),
       );
+    }
+
+    final pubspecText = await pubspec.readAsString();
+    final usesFlutterSdk = pubspecText.contains('sdk: flutter');
+    if (usesFlutterSdk && await flutterCli.supportsMaterialUiPackage()) {
+      final hasMaterialUi = await UiImports.projectUsesMaterialUi(root);
+      if (!hasMaterialUi) {
+        issues.add(
+          const DoctorIssue(
+            severity: DoctorSeverity.medium,
+            code: 'deps.material_ui_missing',
+            message:
+                'Flutter ≥ 3.47 recommends package:material_ui (flutter/material.dart is deprecated).',
+            details:
+                'Run: flutter pub add material_ui cupertino_ui\n'
+                'Then: dart fix --apply --code=migrate_design_widgets\n'
+                'Or recreate/adopt with DevKit on this SDK.',
+          ),
+        );
+      }
     }
 
     final status = issues.any((i) => i.severity == DoctorSeverity.high)

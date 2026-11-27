@@ -9,6 +9,7 @@ import '../feature/feature_layout.dart';
 import '../result.dart';
 import '../runner.dart';
 import '../shared/generator_options.dart';
+import '../shared/ui_imports.dart';
 
 /// Generates unit or widget test scaffolding for a named target.
 final class TestGenerator extends BaseGenerator {
@@ -67,12 +68,16 @@ final class TestGenerator extends BaseGenerator {
         ? 'test/$target/${snake}_test.dart'
         : 'test/features/$feature/$target/${snake}_test.dart';
 
+    final useMaterialUi = await UiImports.projectUsesMaterialUi(
+      context.projectRoot,
+    );
     final content = kind == 'widget'
         ? _widgetTest(
             pascal: pascal,
             snake: snake,
             project: project,
             target: target,
+            useMaterialUi: useMaterialUi,
           )
         : _unitTest(
             pascal: pascal,
@@ -186,12 +191,15 @@ void main() {
     required String snake,
     required String project,
     required String target,
+    required bool useMaterialUi,
   }) {
+    final materialImport = UiImports.materialImport(
+      useMaterialUi: useMaterialUi,
+    );
     return '''
-import 'package:flutter/widgets.dart';
+$materialImport
 import 'package:flutter_test/flutter_test.dart';
-// TODO: import package:$project widget/page for $pascal.
-// Prefer package:material_ui on Flutter ≥ 3.47 for MaterialApp harnesses.
+// Scaffold test — import package:$project widget/page for $pascal.
 
 void main() {
   testWidgets('$pascal builds', (tester) async {
