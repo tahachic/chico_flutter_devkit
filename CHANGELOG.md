@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.5.0-dev.1
+
+### Added
+
+- Feature `--crud` wires Create/Update/Delete use cases through bloc/cubit/
+  provider/riverpod with preview FAB + delete actions (replaceable UI)
+
+### Fixed
+
+- Local-only `--crud` implements repository mutations via local datasource
+
 ## 1.4.1
 
 ### Fixed

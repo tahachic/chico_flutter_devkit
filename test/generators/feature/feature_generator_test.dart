@@ -105,12 +105,18 @@ void main() {
     ).readAsStringSync();
     expect(useCases, contains('class SearchProducts'));
     expect(useCases, contains('class GetProductsPage'));
+    expect(useCases, contains('class CreateProducts'));
+    expect(useCases, contains('class UpdateProducts'));
+    expect(useCases, contains('class DeleteProducts'));
 
     final events = File(
       p.join(root, 'presentation', 'bloc', 'products_event.dart'),
     ).readAsStringSync();
     expect(events, contains('ProductsSearched'));
     expect(events, contains('ProductsPageRequested'));
+    expect(events, contains('ProductsCreated'));
+    expect(events, contains('ProductsUpdated'));
+    expect(events, contains('ProductsDeleted'));
 
     final bloc = File(
       p.join(root, 'presentation', 'bloc', 'products_bloc.dart'),
@@ -154,10 +160,16 @@ void main() {
     expect(page, contains('ProductsListTile'));
     expect(page, contains('ProductsSearched'));
     expect(page, contains('ProductsPageRequested'));
+    expect(page, contains('ProductsCreated'));
+    expect(page, contains('ProductsDeleted'));
+    expect(page, contains('FloatingActionButton'));
     expect(page, isNot(contains('Wire to repository.search')));
     expect(page, contains('getIt<SearchProducts>()'));
     expect(page, contains('getIt<GetProductsPage>()'));
+    expect(page, contains('getIt<CreateProducts>()'));
     expect(page, isNot(contains('getIt<GetProductsList>()')));
+    expect(page, contains('ProductsUpdated'));
+    expect(page, isNot(contains('onTap: () {}')));
     expect(page, isNot(contains('TODO(devkit)')));
 
     final regs = File(

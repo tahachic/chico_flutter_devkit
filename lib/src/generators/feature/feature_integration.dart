@@ -45,6 +45,7 @@ abstract final class FeatureIntegration {
     required bool includeLocal,
     bool includePagination = false,
     bool includeSearch = false,
+    bool includeCrud = false,
     bool useMaterialUi = false,
     ApiFeatureWirePlan? apiWire,
   }) {
@@ -96,6 +97,7 @@ abstract final class FeatureIntegration {
               includeLocal: includeLocal,
               includePagination: includePagination,
               includeSearch: includeSearch,
+              includeCrud: includeCrud,
               apiWire: apiWire,
             ),
             mode: FileWriteMode.overwrite,
@@ -128,6 +130,7 @@ abstract final class FeatureIntegration {
               includeLocal: includeLocal,
               includePagination: includePagination,
               includeSearch: includeSearch,
+              includeCrud: includeCrud,
               apiWire: apiWire,
             ),
             mode: FileWriteMode.overwrite,
@@ -219,6 +222,7 @@ $routesEnd
     required bool includeLocal,
     bool includePagination = false,
     bool includeSearch = false,
+    bool includeCrud = false,
     ApiFeatureWirePlan? apiWire,
   }) {
     final importLines = <String>[
@@ -286,6 +290,24 @@ $routesEnd
   if (!getIt.isRegistered<Get${layout.pascal}Page>()) {
     getIt.registerFactory<Get${layout.pascal}Page>(
       () => Get${layout.pascal}Page(getIt()),
+    );
+  }''');
+    }
+    if (includeCrud) {
+      body.writeln('''
+  if (!getIt.isRegistered<Create${layout.pascal}>()) {
+    getIt.registerFactory<Create${layout.pascal}>(
+      () => Create${layout.pascal}(getIt()),
+    );
+  }
+  if (!getIt.isRegistered<Update${layout.pascal}>()) {
+    getIt.registerFactory<Update${layout.pascal}>(
+      () => Update${layout.pascal}(getIt()),
+    );
+  }
+  if (!getIt.isRegistered<Delete${layout.pascal}>()) {
+    getIt.registerFactory<Delete${layout.pascal}>(
+      () => Delete${layout.pascal}(getIt()),
     );
   }''');
     }
@@ -366,6 +388,7 @@ $providerExportsEnd
     required bool includeLocal,
     bool includePagination = false,
     bool includeSearch = false,
+    bool includeCrud = false,
     ApiFeatureWirePlan? apiWire,
   }) {
     final importLines = <String>[
@@ -400,6 +423,24 @@ $providerExportsEnd
     final repository = ${layout.pascal}RepositoryImpl($ctorArgs);
     return Get${layout.pascal}Page(repository);
   }''',
+      if (includeCrud)
+        '''
+  static Create${layout.pascal} ${layout.camel}Create() {
+    final repository = ${layout.pascal}RepositoryImpl($ctorArgs);
+    return Create${layout.pascal}(repository);
+  }''',
+      if (includeCrud)
+        '''
+  static Update${layout.pascal} ${layout.camel}Update() {
+    final repository = ${layout.pascal}RepositoryImpl($ctorArgs);
+    return Update${layout.pascal}(repository);
+  }''',
+      if (includeCrud)
+        '''
+  static Delete${layout.pascal} ${layout.camel}Delete() {
+    final repository = ${layout.pascal}RepositoryImpl($ctorArgs);
+    return Delete${layout.pascal}(repository);
+  }''',
     ];
 
     var source = _read(root, featureFactoriesPath) ?? freshFeatureFactories();
@@ -417,10 +458,16 @@ $providerExportsEnd
       );
     }
     for (final method in methods) {
-      final identity = method.contains('Search')
+      final identity = method.contains('Search()')
           ? '${layout.camel}Search()'
-          : method.contains('Page')
+          : method.contains('Page()')
           ? '${layout.camel}Page()'
+          : method.contains('Create()')
+          ? '${layout.camel}Create()'
+          : method.contains('Update()')
+          ? '${layout.camel}Update()'
+          : method.contains('Delete()')
+          ? '${layout.camel}Delete()'
           : '${layout.camel}List()';
       source = upsertLine(
         source,
