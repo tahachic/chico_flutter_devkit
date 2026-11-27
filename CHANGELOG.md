@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.5.0-dev.2
+
+### Changed
+
+- Auth `SessionTokenStore` uses `flutter_secure_storage` + in-memory cache;
+  injector hydrates on boot; `TokenRefresh` hook + login preview Sign out
+
 ## 1.5.0-dev.1
 
 ### Added

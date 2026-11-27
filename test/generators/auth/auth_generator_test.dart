@@ -47,6 +47,19 @@ void main() {
     ).readAsStringSync();
     expect(sessionAuth, contains('signInStub'));
     expect(sessionAuth, contains('Future<void> signOut()'));
+    expect(sessionAuth, contains('TokenRefresh'));
+    expect(sessionAuth, contains('refreshToken'));
+
+    final store = File(
+      p.join(tempRoot.path, 'lib', 'core', 'auth', 'session_token_store.dart'),
+    ).readAsStringSync();
+    expect(store, contains('flutter_secure_storage'));
+    expect(store, contains('hydrate'));
+
+    expect(
+      File(p.join(tempRoot.path, 'pubspec.yaml')).readAsStringSync(),
+      contains('flutter_secure_storage:'),
+    );
     expect(
       File(
         p.join(tempRoot.path, 'lib', 'core', 'config', 'app_config.dart'),

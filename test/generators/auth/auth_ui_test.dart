@@ -94,6 +94,8 @@ Future<void> configureDependencies() async {
     final loginSource = login.readAsStringSync();
     expect(loginSource, contains('signInStub'));
     expect(loginSource, contains('Stub login:'));
+    expect(loginSource, contains('Sign out'));
+    expect(loginSource, contains('signOut()'));
     expect(loginSource, contains("package:flutter/material.dart"));
     expect(loginSource, isNot(contains("package:material_ui/material.dart")));
 
