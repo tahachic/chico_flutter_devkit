@@ -109,9 +109,10 @@ Do not pass `--spec` and `--from-api` together.
 devkit generate auth session --ui
 ```
 
-Adds an in-memory token store, `/login` page, and redirects unauthenticated
-`/features/*` to login (go_router + get_it). Without `--ui`, only the token /
-`AppConfig` scaffold is written.
+Adds a `flutter_secure_storage`-backed session store, stub sign-in, preview
+sign-out, `/login` page, and redirects unauthenticated `/features/*` to login
+(go_router + get_it). Without `--ui`, only the token / `AppConfig` scaffold is
+written. Create/adopt also wire Android/iOS ENV flavors (`--dart-define=ENV=`).
 
 ## 9. Common next steps
 

@@ -4,6 +4,13 @@ Copy-paste recipes for common DevKit workflows.
 
 > Tip: add `--dry-run` to any `generate` command to preview files first.
 
+## Doctrine (1.5.0+)
+
+DevKit **owns wiring**, not look-and-feel. Domain, data, state, DI, routes,
+session, and ENV flavors are callable and linked. Presentation ships **minimal
+preview widgets** (TextField, TextButton, ListTile, FAB) so analyze/tests pass —
+swap pages later without rewriting the graph.
+
 ---
 
 ## Create a Clean + Bloc shop app
@@ -83,8 +90,17 @@ devkit generate feature products \
 ```
 
 Run the app and open **Home → Products** (route `/features/products`). You get
-a seeded in-memory list with state wired. Replace the datasource with your API
-(or an OpenAPI client) when you leave the demo stage.
+a seeded in-memory list with state wired, including preview create/update/delete
+when `--crud` is set. Replace preview pages and the datasource when you leave
+the demo stage — keep the use cases and repository.
+
+### ENV flavors after create
+
+```bash
+flutter run --dart-define=ENV=dev
+# Android (productFlavors wired by create/adopt):
+flutter run --flavor dev --dart-define=ENV=dev
+```
 
 ---
 

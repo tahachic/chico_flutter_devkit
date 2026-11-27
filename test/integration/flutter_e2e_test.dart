@@ -497,6 +497,151 @@ void main() {
   );
 
   test(
+    'feature --crud --pagination --search + auth + flavors analyze clean',
+    () async {
+      final root = await Directory.systemTemp.createTemp('devkit_e2e_crud_');
+      addTearDown(() async {
+        if (root.existsSync()) await root.delete(recursive: true);
+      });
+
+      final pkg = Directory.current.path;
+      final project = p.join(root.path, 'crud_app');
+      final create = await Process.run(
+        'dart',
+        [
+          'run',
+          p.join(pkg, 'bin', 'devkit.dart'),
+          'create',
+          'crud_app',
+          '--no-interactive',
+          '--architecture',
+          'clean',
+          '--state',
+          'bloc',
+          '--routing',
+          'go_router',
+          '--di',
+          'get_it',
+          '--no-example-feature',
+          '--output',
+          project,
+        ],
+        workingDirectory: pkg,
+        runInShell: true,
+      );
+      expect(create.exitCode, 0, reason: '${create.stdout}\n${create.stderr}');
+
+      final appConfig = File(
+        p.join(project, 'lib', 'core', 'config', 'app_config.dart'),
+      ).readAsStringSync();
+      expect(appConfig, contains("String.fromEnvironment('ENV'"));
+
+      final androidGradle = File(
+        p.join(project, 'android', 'app', 'build.gradle'),
+      );
+      final androidKts = File(
+        p.join(project, 'android', 'app', 'build.gradle.kts'),
+      );
+      final snippet = File(
+        p.join(project, 'android', 'app', 'devkit_flavors.gradle'),
+      );
+      final androidSource = androidGradle.existsSync()
+          ? androidGradle.readAsStringSync()
+          : androidKts.existsSync()
+          ? androidKts.readAsStringSync()
+          : snippet.existsSync()
+          ? snippet.readAsStringSync()
+          : '';
+      expect(
+        androidSource,
+        anyOf(contains('productFlavors'), contains('devkit_flavors')),
+        reason: 'create must wire Android ENV flavors',
+      );
+
+      Future<ProcessResult> devkit(List<String> args) {
+        return Process.run(
+          'dart',
+          ['run', p.join(pkg, 'bin', 'devkit.dart'), ...args],
+          workingDirectory: project,
+          runInShell: true,
+        );
+      }
+
+      final feature = await devkit([
+        'generate',
+        'feature',
+        'products',
+        '--crud',
+        '--pagination',
+        '--search',
+        '--no-tests',
+      ]);
+      expect(
+        feature.exitCode,
+        0,
+        reason: '${feature.stdout}\n${feature.stderr}',
+      );
+
+      final useCasesDir = Directory(
+        p.join(project, 'lib', 'features', 'products', 'domain', 'usecases'),
+      );
+      final useCaseNames = useCasesDir
+          .listSync()
+          .map((e) => p.basename(e.path))
+          .toList();
+      expect(useCaseNames, contains('create_products.dart'));
+      expect(useCaseNames, contains('update_products.dart'));
+      expect(useCaseNames, contains('delete_products.dart'));
+
+      final page = File(
+        p.join(
+          project,
+          'lib',
+          'features',
+          'products',
+          'presentation',
+          'pages',
+          'products_page.dart',
+        ),
+      ).readAsStringSync();
+      expect(page, isNot(contains('onPressed: () {}')));
+      expect(page, contains('CreateProducts'));
+      expect(page, contains('DeleteProducts'));
+
+      final auth = await devkit(['generate', 'auth', 'session', '--ui']);
+      expect(auth.exitCode, 0, reason: '${auth.stdout}\n${auth.stderr}');
+      final pubspec = File(p.join(project, 'pubspec.yaml')).readAsStringSync();
+      expect(pubspec, contains('flutter_secure_storage'));
+      final login = File(
+        p.join(
+          project,
+          'lib',
+          'features',
+          'auth',
+          'presentation',
+          'pages',
+          'login_page.dart',
+        ),
+      ).readAsStringSync();
+      expect(login.toLowerCase(), contains('sign out'));
+
+      final analyze = await Process.run(
+        'flutter',
+        ['analyze', '--fatal-infos'],
+        workingDirectory: project,
+        runInShell: true,
+      );
+      expect(
+        analyze.exitCode,
+        0,
+        reason: '${analyze.stdout}\n${analyze.stderr}',
+      );
+    },
+    skip: flutter ? false : 'Flutter SDK not available on PATH',
+    timeout: const Timeout(Duration(minutes: 15)),
+  );
+
+  test(
     'feature --spec + custom region sync + auth --ui + flutter test',
     () async {
       final root = await Directory.systemTemp.createTemp('devkit_e2e_120_');

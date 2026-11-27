@@ -8,6 +8,13 @@ devkit list generators
 Always available shared flags: `--dry-run`, `--force` / `-f`, `--tests` /
 `--no-tests`, `--architecture`, `--state`, `--feature`, `--add-missing-chico`.
 
+## Doctrine (1.5.0+)
+
+**Preview UI, wired logic.** Generators must leave use cases, repositories,
+state handlers, DI, routes, session, and ENV flavors callable and linked.
+List/login pages are disposable preview chrome — empty `onPressed` / unused
+CRUD fields are release blockers. Swap presentation without rewriting the graph.
+
 ---
 
 ## `feature`
@@ -24,7 +31,7 @@ devkit generate feature catalog --architecture layered --state riverpod --no-tes
 
 | Flag | Effect |
 |------|--------|
-| `--crud` | create/update/delete on repository + remote |
+| `--crud` | create/update/delete use cases + state + preview FAB/delete |
 | `--pagination` | page APIs + wired Previous/Next UI |
 | `--search` | search API + wired Search TextField |
 | `--filters` | comment-only filter hint (no UI yet) |

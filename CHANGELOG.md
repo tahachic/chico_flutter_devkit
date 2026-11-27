@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.5.0-dev.4
+
+### Changed
+
+- Docs doctrine: preview UI, wired logic (COOKBOOK / GENERATOR_GUIDE /
+  GETTING_STARTED)
+- flutter_e2e hard gate: `--crud` + auth + ENV flavors must analyze clean
+
 ## 1.5.0-dev.3
 
 ### Added
