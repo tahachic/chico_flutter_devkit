@@ -2,42 +2,41 @@
 
 All notable changes to this project will be documented in this file.
 
-## 1.4.0-dev.4
-
-### Changed
-
-- Docs: GENERATOR_GUIDE + ARCHITECTURE Phase 8/9 honesty for wired chrome
-- Removed unused `StubCommand`; service/test generators labeled as scaffolds
-
-## 1.4.0-dev.3
-
-### Changed
-
-- Adopt refuse messages include recovery paths + `upgrade scaffolds` hint
-- Auth `--ui` login page shows an explicit stub-credentials banner
-- Manual release guide adds desktop `--platforms` smoke checklist
-
-## 1.4.0-dev.2
-
-### Changed
-
-- CI Flutter jobs pin `3.50.0` (intentional bump only)
-- Doctor warns when Flutter ≥ 3.47 and `material_ui` is missing
-- `generate test --kind widget` uses `UiImports` for Material harnesses
-
-## 1.4.0-dev.1
+## 1.4.0
 
 ### Changed
 
 - Feature `--search` / `--pagination` wire TextField and Previous/Next through
-  Search/GetPage use cases and bloc/cubit/provider/riverpod state (no empty
-  handlers)
-- `--filters` is documented as comment-only (no fake UI)
+  Search/GetPage use cases and bloc/cubit/provider/riverpod state
+- `--filters` is comment-only (documented; no fake UI)
+- CI Flutter jobs pin `3.50.0`; doctor warns when `material_ui` is missing on
+  Flutter ≥ 3.47
+- Adopt refuse messages include recovery paths + `upgrade scaffolds` hint
+- Auth `--ui` login shows an explicit stub-credentials banner
+- Docs honesty (GENERATOR_GUIDE, ARCHITECTURE Phase 8/9); removed dead
+  `StubCommand`; thin service/test generators labeled as scaffolds
+- Manual release guide adds desktop `--platforms` smoke checklist
 
 ### Fixed
 
 - Local-only features with `--search` / `--pagination` implement repository
-  methods via local datasource (contract no longer hollow)
+  methods via local datasource
+
+## 1.4.0-dev.4
+
+Docs honesty + remove `StubCommand` (folded into 1.4.0).
+
+## 1.4.0-dev.3
+
+Adopt / auth banner / MANUAL platforms (folded into 1.4.0).
+
+## 1.4.0-dev.2
+
+CI pin + doctor material_ui (folded into 1.4.0).
+
+## 1.4.0-dev.1
+
+Wired search/pagination (folded into 1.4.0).
 
 ## 1.3.1
 
