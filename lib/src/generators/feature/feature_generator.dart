@@ -1798,7 +1798,7 @@ ${includeCrud ? '    final delete = Delete${layout.pascal}(repository);' : ''}''
         .join('\n');
     return '''
   /// Preview seed — replace with your real form later.
-  ${layout.pascal} _previewNew() => ${layout.pascal}(
+  ${layout.pascal} previewNew() => ${layout.pascal}(
 $args
   );
 ''';
@@ -2041,7 +2041,7 @@ $body
     floatingActionButton: FloatingActionButton(
       onPressed: () {
         context.read<${layout.pascal}Bloc>().add(
-              ${layout.pascal}Created(_previewNew()),
+              ${layout.pascal}Created(previewNew()),
             );
       },
       child: const Icon(Icons.add),
@@ -2185,7 +2185,7 @@ import '../$stateDir/${layout.snake}_state.dart';
         ? '''
     floatingActionButton: FloatingActionButton(
       onPressed: () {
-        context.read<${layout.pascal}Cubit>().create(_previewNew());
+        context.read<${layout.pascal}Cubit>().create(previewNew());
       },
       child: const Icon(Icons.add),
     ),'''
@@ -2324,7 +2324,7 @@ import '../$stateDir/${layout.snake}_state.dart';
     final fab = includeCrud
         ? '''
           floatingActionButton: FloatingActionButton(
-            onPressed: () => model.create(_previewNew()),
+            onPressed: () => model.create(previewNew()),
             child: const Icon(Icons.add),
           ),'''
         : '';
@@ -2459,7 +2459,7 @@ import '../$stateDir/${layout.snake}_provider.dart';
         ? '''
       floatingActionButton: FloatingActionButton(
         onPressed: () =>
-            ref.read(${layout.snake}ActionsProvider).create(_previewNew()),
+            ref.read(${layout.snake}ActionsProvider).create(previewNew()),
         child: const Icon(Icons.add),
       ),'''
         : '';

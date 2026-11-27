@@ -358,7 +358,7 @@ flutter run --dart-define=ENV=dev
 # flutter run --flavor dev --dart-define=ENV=dev
 ```
 
-- [ ] `lib/core/config/app_config.dart` reads `ENV` via `String.fromEnvironment`
+- [ ] `lib/core/di/app_config.dart` (create) / auth `AppConfig` reads `ENV` via `String.fromEnvironment`
 - [ ] Android `productFlavors` dev/staging/prod present (or `devkit_flavors.gradle` snippet)
 - [ ] iOS `ios/Flutter/Devkit-*.xcconfig` + `DEVKIT_FLAVORS.md` present when ios folder exists
 

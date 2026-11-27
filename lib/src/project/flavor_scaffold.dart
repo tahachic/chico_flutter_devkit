@@ -30,11 +30,10 @@ abstract final class FlavorScaffold {
     if (file == null) return null;
 
     var source = await file.readAsString();
-    if (source.contains('productFlavors') &&
-        source.contains("create(\"dev\")")) {
+    if (source.contains('productFlavors') && source.contains('create("dev")')) {
       return null;
     }
-    if (source.contains('productFlavors') && source.contains("dev {")) {
+    if (source.contains('productFlavors') && source.contains('dev {')) {
       return null;
     }
 

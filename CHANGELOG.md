@@ -10,6 +10,10 @@ All notable changes to this project will be documented in this file.
   GETTING_STARTED)
 - flutter_e2e hard gate: `--crud` + auth + ENV flavors must analyze clean
 
+### Fixed
+
+- Preview CRUD seed helper renamed (`previewNew`) so `--fatal-infos` stays clean
+
 ## 1.5.0-dev.3
 
 ### Added

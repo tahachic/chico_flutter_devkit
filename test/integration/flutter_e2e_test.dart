@@ -532,7 +532,7 @@ void main() {
       expect(create.exitCode, 0, reason: '${create.stdout}\n${create.stderr}');
 
       final appConfig = File(
-        p.join(project, 'lib', 'core', 'config', 'app_config.dart'),
+        p.join(project, 'lib', 'core', 'di', 'app_config.dart'),
       ).readAsStringSync();
       expect(appConfig, contains("String.fromEnvironment('ENV'"));
 
@@ -582,16 +582,20 @@ void main() {
         reason: '${feature.stdout}\n${feature.stderr}',
       );
 
-      final useCasesDir = Directory(
-        p.join(project, 'lib', 'features', 'products', 'domain', 'usecases'),
-      );
-      final useCaseNames = useCasesDir
-          .listSync()
-          .map((e) => p.basename(e.path))
-          .toList();
-      expect(useCaseNames, contains('create_products.dart'));
-      expect(useCaseNames, contains('update_products.dart'));
-      expect(useCaseNames, contains('delete_products.dart'));
+      final useCases = File(
+        p.join(
+          project,
+          'lib',
+          'features',
+          'products',
+          'domain',
+          'usecases',
+          'get_products_list.dart',
+        ),
+      ).readAsStringSync();
+      expect(useCases, contains('class CreateProducts'));
+      expect(useCases, contains('class UpdateProducts'));
+      expect(useCases, contains('class DeleteProducts'));
 
       final page = File(
         p.join(
@@ -606,7 +610,7 @@ void main() {
       ).readAsStringSync();
       expect(page, isNot(contains('onPressed: () {}')));
       expect(page, contains('CreateProducts'));
-      expect(page, contains('DeleteProducts'));
+      expect(page, contains('ProductsDeleted'));
 
       final auth = await devkit(['generate', 'auth', 'session', '--ui']);
       expect(auth.exitCode, 0, reason: '${auth.stdout}\n${auth.stderr}');
